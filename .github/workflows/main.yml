@@ -138,9 +138,6 @@ jobs:
           echo "  🔐  Mat khau       : ngoc0102@"
           echo "  🌍  Xem tren Web   : http://$WEB_IP"
           echo "======================================================================="
-
-      - name: ⏰ Giu Ket Noi (6 Tieng)
-        run: |
           echo "Dang duy tri may chu 6 tieng..."
           for i in {1..72}; do
             ELAPSED=$((i * 5))
