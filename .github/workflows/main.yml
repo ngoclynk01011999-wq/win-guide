@@ -1,296 +1,144 @@
-name: 🖥️ WINDOWS DOCKURR (ARK AUTO VIP - 14G RAM + 150G DISK)
-
-
+name: 🖥️ WINDOWS DOCKURR (UI TEST NODE - 14G RAM + 150G DISK)
 
 on:
-
   workflow_dispatch:
 
-
-
 permissions:
-
   contents: read
 
-
-
 jobs:
-
   windows-rdp:
-
-    name: "Windows ARK Server"
-
+    name: "Windows UI Test Node"
     runs-on: ubuntu-latest
-
     timeout-minutes: 360
+
     strategy:
       fail-fast: false
       matrix:
         machine: [1, 2, 3, 4, 5]
 
-
     steps:
-
       - name: 🔧 Xay dung ha tang va Script Auto
-
         run: |
-
           set -e
-
           sudo apt-get update > /dev/null 2>&1
 
-
-
-          echo "Dang mo khoa o cung 150GB cua GitHub..."
-
+          echo "Dang mo khoa o cung cua GitHub..."
           sudo mkdir -p /mnt/windows_data
-
           sudo chmod 777 /mnt/windows_data
 
-
-
-          echo "Dang viet bua Auto lười bieng (oem/install.bat)..."
-
+          echo "Dang tao script khoi tao Windows sach (oem/install.bat)..."
           mkdir -p oem
-
           cat > oem/install.bat <<'BAT'
-
           @echo off
+          setlocal
 
           echo ===================================================
-
-          echo [AUTO VIP] DANG KHOI DONG QUY TRINH SETUP ARK SERVER
-
+          echo [UI TEST] DANG KHOI TAO MOI TRUONG WINDOWS SACH
           echo ===================================================
 
-          
+          set "STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
+          if not exist "%STARTUP_DIR%" mkdir "%STARTUP_DIR%"
 
-          echo [1/3] Dang tai SteamCMD...
+          echo [1/2] Dang tao startup script mo trang test...
+          > "%STARTUP_DIR%\open-test-page.cmd" echo @echo off
+          >> "%STARTUP_DIR%\open-test-page.cmd" echo timeout /t 8 /nobreak ^>nul
+          >> "%STARTUP_DIR%\open-test-page.cmd" echo start "" "msedge.exe" "https://example.com/test-page"
 
-          mkdir C:\SteamCMD
+          echo [2/2] Hoan tat cau hinh tu dong mo Edge khi vao Desktop.
+          echo [HOAN TAT] Windows da san sang cho Automated UI Testing.
 
-          curl -L -o C:\SteamCMD\steamcmd.zip https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip
-
-          tar -xf C:\SteamCMD\steamcmd.zip -C C:\SteamCMD
-
-          
-
-          echo [2/3] Tao kich ban SteamCMD (Ne loi dau cong)...
-
-          echo login anonymous> C:\SteamCMD\ark_script.txt
-
-          echo force_install_dir C:\ARK>> C:\SteamCMD\ark_script.txt
-
-          echo app_update 376030 validate>> C:\SteamCMD\ark_script.txt
-
-          echo quit>> C:\SteamCMD\ark_script.txt
-
-          
-
-          echo Dang phang cap quang 2Gbps de keo file ARK...
-
-          C:\SteamCMD\steamcmd.exe +runscript C:\SteamCMD\ark_script.txt
-
-          
-
-          echo [3/3] Dang set up mang Playit.gg thong ong...
-
-          mkdir C:\Playit
-
-          curl -L -o C:\Playit\playit.exe https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-windows-x86_64.exe
-
-          
-
-          :: Nho thay link Pastebin chua file playit.toml vao day!
-
-          curl -L -o C:\Playit\playit.toml "LINK_PASTEBIN_CUA_BRO_O_DAY"
-
-          
-
-          echo [HOAN TAT] Dang bat Playit... Chu tich chuan bi vao game!
-
-          start "" "C:\Playit\playit.exe" --config C:\Playit\playit.toml
-
+          endlocal
           BAT
 
-
-
           echo "Dang xay dung may chu Windows RDP..."
-
           cat > docker-compose.yml <<EOF
-
           version: "3.9"
 
           services:
-
             windows:
-
               image: dockurr/windows
-
               container_name: windows_rdp
-
               privileged: true
-
               environment:
-
                 VERSION: "10"
-
                 USERNAME: "user"
-
                 PASSWORD: "ngoc0102@"
-
                 RAM_SIZE: "14G"
-
                 CPU_CORES: "4"
-
                 DISK_SIZE: "128G"
-
               devices:
-
                 - /dev/kvm
-
               ports:
-
                 - "3389:3389"
-
                 - "8006:8006"
-
               volumes:
-
                 - /mnt/windows_data:/storage
-
                 - ./oem:/oem
-
           EOF
 
-
-
           echo "Kich hoat Docker ngam..."
-
           docker compose up -d > /dev/null 2>&1
 
-
-
           echo "Tai va mo duong ham Kami Tunnel..."
-
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
-
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
-
           chmod +x kami-tunnel
 
-
-
           nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
-
           sleep 5
-
           nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
 
-
-
       - name: 🌐 LAY THONG TIN KET NOI RDP
-
         run: |
-
           echo "Dang lay IP duong ham..."
-
           echo ""
 
-
-
           RDP_IP=""
-
           RDP_RETRY=0
-
           while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
-
             if [ -f kami_tunnel.txt ]; then
-
               RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
-
               if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
-
                 RDP_IP="$RDP_CONTENT"
-
                 break
-
               fi
-
             fi
-
             sleep 2
-
             RDP_RETRY=$((RDP_RETRY + 1))
-
           done
-
-
 
           WEB_IP=""
-
           WEB_RETRY=0
-
           while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
-
             if [ -f kami_tunnel.txt ]; then
-
               WEB_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
-
               if [[ "$WEB_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "$RDP_IP" ]; then
-
                 WEB_IP="$WEB_CONTENT"
-
                 break
-
               fi
-
             fi
-
             sleep 2
-
             WEB_RETRY=$((WEB_RETRY + 1))
-
           done
 
-
-
           if [ -z "$WEB_IP" ] && [ -n "$RDP_IP" ]; then
-
             BASE_IP="${RDP_IP%:*}"
-
             WEB_IP="${BASE_IP}:8006"
-
           fi
 
-
-
           echo "======================================================================="
-
-          echo "  ✅ WINDOWS 10 PRO (ARK SERVER AUTO) - DA SAN SANG SU DUNG"
-
+          echo "  ✅ WINDOWS 10 PRO (UI TEST NODE) - DA SAN SANG SU DUNG"
           echo "======================================================================="
-
           echo "  🌐  Ket noi RDP    : $RDP_IP"
-
           echo "  👤  Tai khoan      : user"
-
           echo "  🔐  Mat khau       : ngoc0102@"
-
           echo "  🌍  Xem tren Web   : http://$WEB_IP"
-
           echo "======================================================================="
-
           echo "Dang duy tri may chu 6 tieng..."
-
           for i in {1..72}; do
-
             ELAPSED=$((i * 5))
-
             REMAINING=$((360 - ELAPSED))
-
             echo "✅ May chu van song ($ELAPSED phut / 360 phut)"
-
             sleep 300
-
           done
