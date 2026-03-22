@@ -71,7 +71,7 @@ jobs:
 
           > "%STARTUP_DIR%\open-test-page.cmd" echo @echo off
           >> "%STARTUP_DIR%\open-test-page.cmd" echo timeout /t 8 /nobreak ^>nul
-          >> "%STARTUP_DIR%\open-test-page.cmd" echo start "" "msedge.exe" "https://example.com/test-page"
+          >> "%STARTUP_DIR%\open-test-page.cmd" echo start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
 
           echo [5/5] Hoan tat. Chuan bi khoi dong lai de ap dung ten may moi...
           shutdown /r /t 10
