@@ -1,4 +1,4 @@
-name: 🖥️ WINDOWS DOCKURR (5 MAY - AUTO EDGE + VNC WEB VIP)
+name: 🖥️ WINDOWS DOCKURR (5 MAY AUTO EDGE - VIP)
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   windows-rdp:
-    name: "May ao so ${{ matrix.machine }}"
+    name: "Windows Fake Info ${{ matrix.machine }}"
     runs-on: ubuntu-latest
     timeout-minutes: 360
     strategy:
@@ -17,43 +17,49 @@ jobs:
         machine: [1, 2, 3, 4, 5]
 
     steps:
-      - name: 🔧 Xay dung ha tang va Script Auto Fake Info
+      - name: 🔧 Xay dung ha tang va Script Auto
         run: |
           set -e
-          # Bo qua update rườm rà de ep toc do no IP duoi 1 phut
-          sudo apt-get update -yqq > /dev/null 2>&1 || true
+          sudo apt-get update > /dev/null 2>&1
 
-          # Gieo que ngau nhien cho tung may
-          RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 6 | head -n 1)
-          PC_NAME="DESKTOP-$RANDOM_SUFFIX"
-          
-          RAM_OPTIONS=("8G" "12G" "16G")
-          SELECTED_RAM=${RAM_OPTIONS[$[$RANDOM % ${#RAM_OPTIONS[@]}]]}
-          
-          CPU_OPTIONS=("12th Gen Intel(R) Core(TM) i5-12400F" "13th Gen Intel(R) Core(TM) i7-13700K" "Intel(R) Core(TM) i5-10400F @ 2.90GHz")
-          SELECTED_CPU=${CPU_OPTIONS[$[$RANDOM % ${#CPU_OPTIONS[@]}]]}
-
+          echo "Dang mo khoa o cung 150GB cua GitHub..."
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
 
+          # Gieo que ngau nhien cho cac may
+          RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 6 | head -n 1)
+          PC_NAME="DESKTOP-$RANDOM_SUFFIX"
+          RAM_OPTIONS=("8G" "12G" "16G")
+          SELECTED_RAM=${RAM_OPTIONS[$[$RANDOM % ${#RAM_OPTIONS[@]}]]}
+          CPU_OPTIONS=("12th Gen Intel(R) Core(TM) i5-12400F" "13th Gen Intel(R) Core(TM) i7-13700K" "Intel(R) Core(TM) i5-10400F @ 2.90GHz")
+          SELECTED_CPU=${CPU_OPTIONS[$[$RANDOM % ${#CPU_OPTIONS[@]}]]}
+
+          echo "Dang viet bua Auto lười bieng (oem/install.bat)..."
           mkdir -p oem
           cat > oem/install.bat <<EOF
           @echo off
           echo ===================================================
           echo [AUTO VIP] DANG KHOI DONG QUY TRINH FAKE INFO VA EDGE
           echo ===================================================
+          
+          echo [1/3] Tay trang dau vet Docker va doi ten...
           REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /f >nul 2>&1
           powershell -Command "Rename-Computer -NewName '$PC_NAME' -Force"
+          
+          echo [2/3] Fake thong tin CPU...
           REG ADD "HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0" /v "ProcessorNameString" /t REG_SZ /d "$SELECTED_CPU" /f >nul 2>&1
           
-          :: Nho thay link tai App cua bro vao day nhe!
+          echo [3/3] GAI BAY KHOI DONG: Tu dong mo Edge...
+          :: Nho thay link tai App cua bro vao cho LINK_APP_CUA_BRO_VAO_DAY nhe!
           echo @echo off > "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
           echo start msedge "LINK_APP_CUA_BRO_VAO_DAY" >> "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
           
+          echo [HOAN TAT] May se Reset sau 10s. Chu tich chuan bi vao hup!
           shutdown /r /t 10
           EOF
 
-          cat > docker-compose.yml <<EOF_D
+          echo "Dang xay dung may chu Windows RDP..."
+          cat > docker-compose.yml <<EOF
           version: "3.9"
           services:
             windows:
@@ -75,50 +81,70 @@ jobs:
               volumes:
                 - /mnt/windows_data:/storage
                 - ./oem:/oem
-          EOF_D
+          EOF
 
+          echo "Kich hoat Docker ngam..."
           docker compose up -d > /dev/null 2>&1
 
+          echo "Tai va mo duong ham Kami Tunnel..."
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
 
           nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
-          sleep 3
+          sleep 5
           nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
 
-      - name: 🌐 LAY LINK VNC WEB VA RDP
+      - name: 🌐 LAY THONG TIN KET NOI RDP
         run: |
+          echo "Dang lay IP duong ham..."
+          echo ""
+
           RDP_IP=""
-          WEB_IP=""
-          RETRY=0
-          while [ -z "$WEB_IP" ] && [ $RETRY -lt 60 ]; do
+          RDP_RETRY=0
+          while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
             if [ -f kami_tunnel.txt ]; then
-              RDP_IP=$(cat kami_tunnel.txt 2>/dev/null | head -1)
-              WEB_IP=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
-              # Dam bao web ip khong bi trung rdp ip neu file chua ghi xong
-              if [ "$WEB_IP" == "$RDP_IP" ]; then WEB_IP=""; fi
+              RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
+              if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
+                RDP_IP="$RDP_CONTENT"
+                break
+              fi
             fi
             sleep 2
-            RETRY=$((RETRY + 1))
+            RDP_RETRY=$((RDP_RETRY + 1))
           done
 
-          # Neu lo kami tunnel chi ra 1 dong
+          WEB_IP=""
+          WEB_RETRY=0
+          while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
+            if [ -f kami_tunnel.txt ]; then
+              WEB_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
+              if [[ "$WEB_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "$RDP_IP" ]; then
+                WEB_IP="$WEB_CONTENT"
+                break
+              fi
+            fi
+            sleep 2
+            WEB_RETRY=$((WEB_RETRY + 1))
+          done
+
           if [ -z "$WEB_IP" ] && [ -n "$RDP_IP" ]; then
             BASE_IP="${RDP_IP%:*}"
             WEB_IP="${BASE_IP}:8006"
           fi
 
           echo "======================================================================="
-          echo "  ✅ MAY SỐ ${{ matrix.machine }} - ĐÃ LÊN ĐẠN!"
+          echo "  ✅ WINDOWS 10 PRO (FAKE INFO AUTO) - DA SAN SANG SU DUNG"
           echo "======================================================================="
-          echo "  🌍 LINK VNC WEB (XEM LIVE) : http://$WEB_IP"
-          echo "  🌐 LINK RDP (APP)          : $RDP_IP"
-          echo "  👤 Tai khoan               : user"
-          echo "  🔐 Mat khau                : ngoc0102@"
+          echo "  🌐  Ket noi RDP    : $RDP_IP"
+          echo "  👤  Tai khoan      : user"
+          echo "  🔐  Mat khau       : ngoc0102@"
+          echo "  🌍  Xem tren Web   : http://$WEB_IP"
           echo "======================================================================="
-          
+          echo "Dang duy tri may chu 6 tieng..."
           for i in {1..72}; do
+            ELAPSED=$((i * 5))
+            REMAINING=$((360 - ELAPSED))
+            echo "✅ May chu van song ($ELAPSED phut / 360 phut)"
             sleep 300
-            echo "✅ May chu van song ($((i * 5)) phut / 360 phut)"
           done
