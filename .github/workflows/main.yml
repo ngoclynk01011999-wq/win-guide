@@ -1,4 +1,4 @@
-name: 🖥️ WINDOWS DOCKURR (5 MAY AUTO EDGE - SPEED VIP)
+name: 🖥️ WINDOWS DOCKURR (5 MAY AUTO EDGE - CHONG LOI VIP)
 
 on:
   workflow_dispatch:
@@ -21,19 +21,15 @@ jobs:
         run: |
           set -e
           
-          # DA XOA CAI DONG "APT-GET UPDATE" DE CHO NO BAY NHU CHIM!
-
           echo "Dang mo khoa o cung 150GB cua GitHub..."
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
 
-          # Gieo que ngau nhien cho cac may (Sua lai cu phap ngau nhien chuan toc do cao)
+          # Gieo que ngau nhien bang lenh Linux nguyen thuy, bao loi do!
           RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 6 | head -n 1)
           PC_NAME="DESKTOP-$RANDOM_SUFFIX"
-          RAM_OPTIONS=("8G" "12G" "16G")
-          SELECTED_RAM=${RAM_OPTIONS[$(($RANDOM % ${#RAM_OPTIONS[@]}))]}
-          CPU_OPTIONS=("12th Gen Intel(R) Core(TM) i5-12400F" "13th Gen Intel(R) Core(TM) i7-13700K" "Intel(R) Core(TM) i5-10400F @ 2.90GHz")
-          SELECTED_CPU=${CPU_OPTIONS[$(($RANDOM % ${#CPU_OPTIONS[@]}))]}
+          SELECTED_RAM=$(echo -e "8G\n12G\n16G" | shuf -n 1)
+          SELECTED_CPU=$(echo -e "12th Gen Intel(R) Core(TM) i5-12400F\n13th Gen Intel(R) Core(TM) i7-13700K\nIntel(R) Core(TM) i5-10400F @ 2.90GHz" | shuf -n 1)
 
           echo "Dang viet bua Auto lười bieng (oem/install.bat)..."
           mkdir -p oem
@@ -51,7 +47,7 @@ jobs:
           REG ADD "HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0" /v "ProcessorNameString" /t REG_SZ /d "$SELECTED_CPU" /f >nul 2>&1
           
           echo [3/3] GAI BAY KHOI DONG: Tu dong mo Edge...
-          :: Nho thay link tai App cua bro vao cho LINK_APP_CUA_BRO_VAO_DAY nhe!
+          :: Thay link vao day nhe dong huong!
           echo @echo off > "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
           echo start msedge "LINK_APP_CUA_BRO_VAO_DAY" >> "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
           
