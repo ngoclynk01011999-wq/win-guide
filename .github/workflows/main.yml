@@ -1,4 +1,4 @@
-name: 🖥️ WINDOWS DOCKURR (5 MÁY AUTO EDGE - CÀY CÔNG NGHIỆP)
+name: 🖥️ WINDOWS DOCKURR (5 MAY AUTO EDGE - FAKE INFO VIP)
 
 on:
   workflow_dispatch:
@@ -8,46 +8,40 @@ permissions:
 
 jobs:
   windows-rdp:
-    name: "🖥️ May ao so ${{ matrix.machine }}"
+    name: "May ao so ${{ matrix.machine }}"
     runs-on: ubuntu-latest
     timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
-        machine: [1, 2, 3, 4, 5] # Muon bao nhieu may thi them so vao day (toi da 20)
+        machine: [1, 2, 3, 4, 5]
 
     steps:
-      - name: 🔧 Thiet lap thong so va Gieo que ngau nhien
+      - name: 🔧 Xay dung ha tang va Script Auto Fake Info
         run: |
           set -e
           sudo apt-get update > /dev/null 2>&1
 
-          # 1. Random Ten PC (DESKTOP + 6 chu cai/so)
+          # Gieo que ngau nhien cho tung may
           RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 6 | head -n 1)
           PC_NAME="DESKTOP-$RANDOM_SUFFIX"
-
-          # 2. Random RAM (8G, 12G, 16G)
+          
           RAM_OPTIONS=("8G" "12G" "16G")
           SELECTED_RAM=${RAM_OPTIONS[$[$RANDOM % ${#RAM_OPTIONS[@]}]]}
-
-          # 3. Random CPU Name (Hang quoc dan cho Admin kho check)
+          
           CPU_OPTIONS=("12th Gen Intel(R) Core(TM) i5-12400F" "13th Gen Intel(R) Core(TM) i7-13700K" "Intel(R) Core(TM) i5-10400F @ 2.90GHz")
           SELECTED_CPU=${CPU_OPTIONS[$[$RANDOM % ${#CPU_OPTIONS[@]}]]}
 
-          echo "PC_NAME=$PC_NAME"
-          echo "RAM=$SELECTED_RAM"
-          echo "CPU=$SELECTED_CPU"
-
-          echo "Dang mo khoa o cung 150GB..."
+          echo "Dang mo khoa o cung 150GB cua GitHub..."
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
 
-          echo "Dang viet bua Auto Fake (oem/install.bat)..."
+          echo "Dang viet bua Auto lười bieng (oem/install.bat)..."
           mkdir -p oem
           cat > oem/install.bat <<EOF
           @echo off
           echo ===================================================
-          echo [SYSTEM] DANG THIET LAP CAU HINH MAY TINH CA NHAN...
+          echo [AUTO VIP] DANG KHOI DONG QUY TRINH FAKE INFO VA EDGE
           echo ===================================================
           
           echo [1/4] Tay trang dau vet Docker...
@@ -59,19 +53,18 @@ jobs:
           echo [3/4] Fake thong tin CPU hien thi thanh: $SELECTED_CPU
           REG ADD "HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0" /v "ProcessorNameString" /t REG_SZ /d "$SELECTED_CPU" /f >nul 2>&1
           
-          echo [4/4] GAI BAY KHOI DONG: Tu dong mo Edge vao Link cua chu tich...
-          :: Luu y: Thay cai link ben duoi thanh link tai App cua bro nhe!
+          echo [4/4] GAI BAY KHOI DONG: Tu dong mo Edge...
+          :: Nho thay link tai App cua bro vao cho chu in hoa nay nhe!
           echo @echo off > "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
-          echo start msedge "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon" >> "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
+          echo start msedge "LINK_APP_CUA_BRO_VAO_DAY" >> "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
           
           echo ===================================================
-          echo [DONE] Cau hinh da hoan tat!
-          echo May se Reset sau 10s de ap dung ten moi va chay Auto Edge.
+          echo [DONE] Cau hinh da hoan tat! May se Reset sau 10s.
           echo ===================================================
           shutdown /r /t 10
           EOF
 
-          echo "Dang xay dung may chu Windows RDP voi RAM $SELECTED_RAM..."
+          echo "Dang xay dung may chu Windows RDP..."
           cat > docker-compose.yml <<EOF_D
           version: "3.9"
           services:
@@ -96,32 +89,68 @@ jobs:
                 - ./oem:/oem
           EOF_D
 
+          echo "Kich hoat Docker ngam..."
           docker compose up -d > /dev/null 2>&1
 
           echo "Tai va mo duong ham Kami Tunnel..."
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
+
           nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
           sleep 5
           nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
 
       - name: 🌐 LAY THONG TIN KET NOI RDP
         run: |
+          echo "Dang lay IP duong ham..."
+          echo ""
+
           RDP_IP=""
-          while [ -z "$RDP_IP" ]; do
-            if [ -f kami_tunnel.txt ]; then RDP_IP=$(cat kami_tunnel.txt | head -1); fi
+          RDP_RETRY=0
+          while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
+            if [ -f kami_tunnel.txt ]; then
+              RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
+              if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
+                RDP_IP="$RDP_CONTENT"
+                break
+              fi
+            fi
             sleep 2
+            RDP_RETRY=$((RDP_RETRY + 1))
           done
+
+          WEB_IP=""
+          WEB_RETRY=0
+          while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
+            if [ -f kami_tunnel.txt ]; then
+              WEB_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
+              if [[ "$WEB_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "$RDP_IP" ]; then
+                WEB_IP="$WEB_CONTENT"
+                break
+              fi
+            fi
+            sleep 2
+            WEB_RETRY=$((WEB_RETRY + 1))
+          done
+
+          if [ -z "$WEB_IP" ] && [ -n "$RDP_IP" ]; then
+            BASE_IP="${RDP_IP%:*}"
+            WEB_IP="${BASE_IP}:8006"
+          fi
+
           echo "======================================================================="
-          echo "  ✅ MAY SO ${{ matrix.machine }} DA SAN SANG - AUTO EDGE DA LEN NONG"
+          echo "  ✅ MAY SO ${{ matrix.machine }} (FAKE INFO + EDGE) - DA SAN SANG"
           echo "======================================================================="
-          echo "  🌐 RDP IP   : $RDP_IP"
-          echo "  👤 User     : user"
-          echo "  🔐 Pass     : ngoc0102@"
+          echo "  🌐  Ket noi RDP    : $RDP_IP"
+          echo "  👤  Tai khoan      : user"
+          echo "  🔐  Mat khau       : ngoc0102@"
+          echo "  🌍  Xem tren Web   : http://$WEB_IP"
           echo "======================================================================="
           echo "Dang duy tri may chu 6 tieng..."
           for i in {1..72}; do
+            ELAPSED=$((i * 5))
+            REMAINING=$((360 - ELAPSED))
+            echo "✅ May chu van song ($ELAPSED phut / 360 phut)"
             sleep 300
-            echo "✅ May chu van song ($((i * 5)) phut / 360 phut)"
           done
