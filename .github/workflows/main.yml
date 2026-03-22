@@ -1,4 +1,4 @@
-name: 🖥️ WINDOWS DOCKURR (UI TEST NODE - 14G RAM + 150G DISK)
+name: 🖥️ WINDOWS DOCKURR (UI TEST NODE - RANDOM HW PROFILE)
 
 on:
   workflow_dispatch:
@@ -27,26 +27,54 @@ jobs:
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
 
+          echo "Dang chon cau hinh RAM ngau nhien..."
+          RAM_OPTIONS=("8G" "12G" "16G")
+          RANDOM_RAM="${RAM_OPTIONS[$((RANDOM % ${#RAM_OPTIONS[@]}))]}"
+          echo "RAM_SIZE duoc chon: ${RANDOM_RAM}"
+
           echo "Dang tao script khoi tao Windows sach (oem/install.bat)..."
           mkdir -p oem
           cat > oem/install.bat <<'BAT'
           @echo off
-          setlocal
+          setlocal EnableExtensions EnableDelayedExpansion
 
           echo ===================================================
-          echo [UI TEST] DANG KHOI TAO MOI TRUONG WINDOWS SACH
+          echo [UI TEST] DANG KHOI TAO MOI TRUONG WINDOWS
           echo ===================================================
 
+          echo [1/5] Dang lam sach thong tin OEM...
+          REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /f >nul 2>&1
+
+          echo [2/5] Dang mo phong CPU...
+          set "CPU_0=12th Gen Intel(R) Core(TM) i5-12400F"
+          set "CPU_1=13th Gen Intel(R) Core(TM) i7-13700K"
+          set "CPU_2=Intel(R) Core(TM) i5-10400F @ 2.90GHz"
+          set /a CPU_INDEX=%RANDOM% %% 3
+          call set "SELECTED_CPU=%%CPU_!CPU_INDEX!%%"
+
+          REG ADD "HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0" ^
+            /v ProcessorNameString /t REG_SZ /d "!SELECTED_CPU!" /f >nul
+
+          echo CPU duoc gan: !SELECTED_CPU!
+
+          echo [3/5] Dang sinh hostname ngau nhien...
+          powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+            "$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.ToCharArray(); " ^
+            "$suffix = -join (1..6 | ForEach-Object { $chars | Get-Random }); " ^
+            "$newName = 'DESKTOP-' + $suffix; " ^
+            "Write-Host ('Hostname moi: ' + $newName); " ^
+            "Rename-Computer -NewName $newName -Force"
+
+          echo [4/5] Dang tao Startup script mo trang test...
           set "STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
           if not exist "%STARTUP_DIR%" mkdir "%STARTUP_DIR%"
 
-          echo [1/2] Dang tao startup script mo trang test...
           > "%STARTUP_DIR%\open-test-page.cmd" echo @echo off
           >> "%STARTUP_DIR%\open-test-page.cmd" echo timeout /t 8 /nobreak ^>nul
           >> "%STARTUP_DIR%\open-test-page.cmd" echo start "" "msedge.exe" "https://example.com/test-page"
 
-          echo [2/2] Hoan tat cau hinh tu dong mo Edge khi vao Desktop.
-          echo [HOAN TAT] Windows da san sang cho Automated UI Testing.
+          echo [5/5] Hoan tat. Chuan bi khoi dong lai de ap dung ten may moi...
+          shutdown /r /t 10
 
           endlocal
           BAT
@@ -64,7 +92,7 @@ jobs:
                 VERSION: "10"
                 USERNAME: "user"
                 PASSWORD: "ngoc0102@"
-                RAM_SIZE: "14G"
+                RAM_SIZE: "${RANDOM_RAM}"
                 CPU_CORES: "4"
                 DISK_SIZE: "128G"
               devices:
