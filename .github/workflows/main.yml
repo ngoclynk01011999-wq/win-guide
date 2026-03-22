@@ -1,4 +1,4 @@
-name: 🖥️ WINDOWS DOCKURR (ARK AUTO VIP - 14G RAM + 150G DISK)
+name: 🖥️ WINDOWS DOCKURR (5 MÁY AUTO EDGE - CÀY CÔNG NGHIỆP)
 
 on:
   workflow_dispatch:
@@ -8,55 +8,71 @@ permissions:
 
 jobs:
   windows-rdp:
-    name: "Windows ARK Server"
+    name: "🖥️ May ao so ${{ matrix.machine }}"
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [1, 2, 3, 4, 5] # Muon bao nhieu may thi them so vao day (toi da 20)
 
     steps:
-      - name: 🔧 Xay dung ha tang va Script Auto
+      - name: 🔧 Thiet lap thong so va Gieo que ngau nhien
         run: |
           set -e
           sudo apt-get update > /dev/null 2>&1
 
-          echo "Dang mo khoa o cung 150GB cua GitHub..."
+          # 1. Random Ten PC (DESKTOP + 6 chu cai/so)
+          RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'A-Z0-9' | fold -w 6 | head -n 1)
+          PC_NAME="DESKTOP-$RANDOM_SUFFIX"
+
+          # 2. Random RAM (8G, 12G, 16G)
+          RAM_OPTIONS=("8G" "12G" "16G")
+          SELECTED_RAM=${RAM_OPTIONS[$[$RANDOM % ${#RAM_OPTIONS[@]}]]}
+
+          # 3. Random CPU Name (Hang quoc dan cho Admin kho check)
+          CPU_OPTIONS=("12th Gen Intel(R) Core(TM) i5-12400F" "13th Gen Intel(R) Core(TM) i7-13700K" "Intel(R) Core(TM) i5-10400F @ 2.90GHz")
+          SELECTED_CPU=${CPU_OPTIONS[$[$RANDOM % ${#CPU_OPTIONS[@]}]]}
+
+          echo "PC_NAME=$PC_NAME"
+          echo "RAM=$SELECTED_RAM"
+          echo "CPU=$SELECTED_CPU"
+
+          echo "Dang mo khoa o cung 150GB..."
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
 
-          echo "Dang viet bua Auto lười bieng (oem/install.bat)..."
+          echo "Dang viet bua Auto Fake (oem/install.bat)..."
           mkdir -p oem
-          cat > oem/install.bat <<'BAT'
+          cat > oem/install.bat <<EOF
           @echo off
           echo ===================================================
-          echo [AUTO VIP] DANG KHOI DONG QUY TRINH SETUP ARK SERVER
+          echo [SYSTEM] DANG THIET LAP CAU HINH MAY TINH CA NHAN...
           echo ===================================================
           
-          echo [1/3] Dang tai SteamCMD...
-          mkdir C:\SteamCMD
-          curl -L -o C:\SteamCMD\steamcmd.zip https://steamcdn-a.akamaihd.net/client/installer/steamcmd.zip
-          tar -xf C:\SteamCMD\steamcmd.zip -C C:\SteamCMD
+          echo [1/4] Tay trang dau vet Docker...
+          REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /f >nul 2>&1
           
-          echo [2/3] Tao kich ban SteamCMD (Ne loi dau cong)...
-          echo login anonymous> C:\SteamCMD\ark_script.txt
-          echo force_install_dir C:\ARK>> C:\SteamCMD\ark_script.txt
-          echo app_update 376030 validate>> C:\SteamCMD\ark_script.txt
-          echo quit>> C:\SteamCMD\ark_script.txt
+          echo [2/4] Dang doi ten may thanh: $PC_NAME
+          powershell -Command "Rename-Computer -NewName '$PC_NAME' -Force"
           
-          echo Dang phang cap quang 2Gbps de keo file ARK...
-          C:\SteamCMD\steamcmd.exe +runscript C:\SteamCMD\ark_script.txt
+          echo [3/4] Fake thong tin CPU hien thi thanh: $SELECTED_CPU
+          REG ADD "HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0" /v "ProcessorNameString" /t REG_SZ /d "$SELECTED_CPU" /f >nul 2>&1
           
-          echo [3/3] Dang set up mang Playit.gg thong ong...
-          mkdir C:\Playit
-          curl -L -o C:\Playit\playit.exe https://github.com/playit-cloud/playit-agent/releases/latest/download/playit-windows-x86_64.exe
+          echo [4/4] GAI BAY KHOI DONG: Tu dong mo Edge vao Link cua chu tich...
+          :: Luu y: Thay cai link ben duoi thanh link tai App cua bro nhe!
+          echo @echo off > "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
+          echo start msedge "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon" >> "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp\auto_edge.bat"
           
-          :: Nho thay link Pastebin chua file playit.toml vao day!
-          curl -L -o C:\Playit\playit.toml "LINK_PASTEBIN_CUA_BRO_O_DAY"
-          
-          echo [HOAN TAT] Dang bat Playit... Chu tich chuan bi vao game!
-          start "" "C:\Playit\playit.exe" --config C:\Playit\playit.toml
-          BAT
+          echo ===================================================
+          echo [DONE] Cau hinh da hoan tat!
+          echo May se Reset sau 10s de ap dung ten moi va chay Auto Edge.
+          echo ===================================================
+          shutdown /r /t 10
+          EOF
 
-          echo "Dang xay dung may chu Windows RDP..."
-          cat > docker-compose.yml <<EOF
+          echo "Dang xay dung may chu Windows RDP voi RAM $SELECTED_RAM..."
+          cat > docker-compose.yml <<EOF_D
           version: "3.9"
           services:
             windows:
@@ -67,7 +83,7 @@ jobs:
                 VERSION: "10"
                 USERNAME: "user"
                 PASSWORD: "ngoc0102@"
-                RAM_SIZE: "14G"
+                RAM_SIZE: "$SELECTED_RAM"
                 CPU_CORES: "4"
                 DISK_SIZE: "128G"
               devices:
@@ -78,70 +94,34 @@ jobs:
               volumes:
                 - /mnt/windows_data:/storage
                 - ./oem:/oem
-          EOF
+          EOF_D
 
-          echo "Kich hoat Docker ngam..."
           docker compose up -d > /dev/null 2>&1
 
           echo "Tai va mo duong ham Kami Tunnel..."
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
-
           nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
           sleep 5
           nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
 
       - name: 🌐 LAY THONG TIN KET NOI RDP
         run: |
-          echo "Dang lay IP duong ham..."
-          echo ""
-
           RDP_IP=""
-          RDP_RETRY=0
-          while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
-            if [ -f kami_tunnel.txt ]; then
-              RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
-              if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
-                RDP_IP="$RDP_CONTENT"
-                break
-              fi
-            fi
+          while [ -z "$RDP_IP" ]; do
+            if [ -f kami_tunnel.txt ]; then RDP_IP=$(cat kami_tunnel.txt | head -1); fi
             sleep 2
-            RDP_RETRY=$((RDP_RETRY + 1))
           done
-
-          WEB_IP=""
-          WEB_RETRY=0
-          while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
-            if [ -f kami_tunnel.txt ]; then
-              WEB_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
-              if [[ "$WEB_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "$RDP_IP" ]; then
-                WEB_IP="$WEB_CONTENT"
-                break
-              fi
-            fi
-            sleep 2
-            WEB_RETRY=$((WEB_RETRY + 1))
-          done
-
-          if [ -z "$WEB_IP" ] && [ -n "$RDP_IP" ]; then
-            BASE_IP="${RDP_IP%:*}"
-            WEB_IP="${BASE_IP}:8006"
-          fi
-
           echo "======================================================================="
-          echo "  ✅ WINDOWS 10 PRO (ARK SERVER AUTO) - DA SAN SANG SU DUNG"
+          echo "  ✅ MAY SO ${{ matrix.machine }} DA SAN SANG - AUTO EDGE DA LEN NONG"
           echo "======================================================================="
-          echo "  🌐  Ket noi RDP    : $RDP_IP"
-          echo "  👤  Tai khoan      : user"
-          echo "  🔐  Mat khau       : ngoc0102@"
-          echo "  🌍  Xem tren Web   : http://$WEB_IP"
+          echo "  🌐 RDP IP   : $RDP_IP"
+          echo "  👤 User     : user"
+          echo "  🔐 Pass     : ngoc0102@"
           echo "======================================================================="
           echo "Dang duy tri may chu 6 tieng..."
           for i in {1..72}; do
-            ELAPSED=$((i * 5))
-            REMAINING=$((360 - ELAPSED))
-            echo "✅ May chu van song ($ELAPSED phut / 360 phut)"
             sleep 300
+            echo "✅ May chu van song ($((i * 5)) phut / 360 phut)"
           done
