@@ -38,24 +38,10 @@ jobs:
           )
           SELECTED_CPU="${CPU_OPTIONS[$((RANDOM % ${#CPU_OPTIONS[@]}))]}"
 
-          OEM_PROFILES=(
-            "Dell Inc.|OptiPlex 7090"
-            "ASUSTeK COMPUTER INC.|ROG Strix G15"
-            "LENOVO|Legion 5"
-          )
-          SELECTED_OEM="${OEM_PROFILES[$((RANDOM % ${#OEM_PROFILES[@]}))]}"
-          IFS='|' read -r OEM_MANU OEM_PROD <<< "${SELECTED_OEM}"
-
           {
             echo "RANDOM_RAM=${RANDOM_RAM}"
             echo "SELECTED_CPU=${SELECTED_CPU}"
-            echo "OEM_MANU=${OEM_MANU}"
-            echo "OEM_PROD=${OEM_PROD}"
           } >> "$GITHUB_ENV"
-
-          echo "RAM  : ${RANDOM_RAM}"
-          echo "CPU  : ${SELECTED_CPU}"
-          echo "OEM  : ${OEM_MANU} | ${OEM_PROD}"
 
       - name: Generate setup-ui.ps1
         shell: bash
@@ -75,6 +61,28 @@ jobs:
           $suffix = -join (1..6 | ForEach-Object { $chars | Get-Random })
           $newName = "DESKTOP-$suffix"
           Rename-Computer -NewName $newName -Force
+
+          # OEM Environment Simulation
+          $oemProfiles = @(
+            @{
+              Manufacturer = "Dell Inc."
+              ProductName  = "OptiPlex 7090"
+            },
+            @{
+              Manufacturer = "ASUSTeK COMPUTER INC."
+              ProductName  = "ROG Strix G15"
+            }
+          )
+
+          $selectedOem = Get-Random -InputObject $oemProfiles
+          $biosKey = "HKLM:\HARDWARE\DESCRIPTION\System\BIOS"
+
+          try {
+            Set-ItemProperty -Path $biosKey -Name "SystemManufacturer" -Value $selectedOem.Manufacturer -Type String -ErrorAction Stop
+            Set-ItemProperty -Path $biosKey -Name "SystemProductName" -Value $selectedOem.ProductName -Type String -ErrorAction Stop
+          } catch {
+            Write-Host ("[OEM MOCK] Loi: " + $_.Exception.Message)
+          }
 
           $wallpaperDir = "C:\Temp"
           $wallpaperPath = Join-Path $wallpaperDir "wallpaper.jpg"
@@ -103,11 +111,11 @@ jobs:
           $darkMode = Get-Random -Minimum 0 -Maximum 2
           New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Force | Out-Null
           if ($darkMode -eq 1) {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 0 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 0 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 0 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 0 -Type DWord
           } else {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 1 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 1 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 1 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 1 -Type DWord
           }
 
           $desktop = [Environment]::GetFolderPath("Desktop")
@@ -186,7 +194,7 @@ jobs:
                 RAM_SIZE: "${RANDOM_RAM}"
                 CPU_CORES: "4"
                 DISK_SIZE: "128G"
-                ARGUMENTS: "-smbios type=1,manufacturer='${OEM_MANU}',product='${OEM_PROD}'"
+                ARGUMENTS: ""
               devices:
                 - /dev/kvm
               ports:
@@ -263,7 +271,6 @@ jobs:
           echo "USER : ${WINDOWS_USERNAME}"
           echo "PASS : ${WINDOWS_PASSWORD}"
           echo "CPU  : ${SELECTED_CPU}"
-          echo "OEM  : ${OEM_MANU} | ${OEM_PROD}"
 
       - name: Keep runner alive
         shell: bash
