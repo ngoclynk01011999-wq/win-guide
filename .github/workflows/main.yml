@@ -1,6 +1,6 @@
 name: 🖥️ WINDOWS DOCKURR (FAST noVNC + RANDOM HW PROFILE)
 
-on:
+"on":
   workflow_dispatch:
 
 permissions:
@@ -95,12 +95,12 @@ jobs:
 
           if (Test-Path $wallpaperPath) {
             Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class Wallpaper {
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-}
+            using System;
+            using System.Runtime.InteropServices;
+            public class Wallpaper {
+                [DllImport("user32.dll", SetLastError = true)]
+                public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+            }
 "@
 
             Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "10"
@@ -166,11 +166,11 @@ public class Wallpaper {
           New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
 
           $startupCmd = @'
-@echo off
-timeout /t 8 /nobreak >nul
-start "" "ms-settings:about"
-timeout /t 3 /nobreak >nul
-start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
+          @echo off
+          timeout /t 8 /nobreak >nul
+          start "" "ms-settings:about"
+          timeout /t 3 /nobreak >nul
+          start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
 '@
 
           Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
