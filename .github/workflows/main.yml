@@ -24,7 +24,7 @@ jobs:
           sudo apt-get update > /dev/null 2>&1
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
-          mkdir -p oem
+          mkdir -p oem qemu-wrapper
 
           RAM_OPTIONS=("8G" "12G" "16G")
           RANDOM_RAM="${RAM_OPTIONS[$((RANDOM % ${#RAM_OPTIONS[@]}))]}"
@@ -42,6 +42,40 @@ jobs:
             echo "RANDOM_RAM=${RANDOM_RAM}"
             echo "SELECTED_CPU=${SELECTED_CPU}"
           } >> "$GITHUB_ENV"
+
+      - name: Generate custom QEMU launcher
+        shell: bash
+        run: |
+          cat > qemu-wrapper/qemu-system-x86_64 <<'BASH'
+          #!/usr/bin/env bash
+          set -Eeuo pipefail
+
+          OEM_MANU="ASUSTeK COMPUTER INC."
+          OEM_PROD="ROG Strix G15"
+
+          filtered_args=()
+          skip_next=0
+
+          for arg in "$@"; do
+            if [[ "$skip_next" -eq 1 ]]; then
+              skip_next=0
+              continue
+            fi
+
+            if [[ "$arg" == "-smbios" ]]; then
+              skip_next=1
+              continue
+            fi
+
+            filtered_args+=("$arg")
+          done
+
+          exec /usr/bin/qemu-system-x86_64 \
+            "${filtered_args[@]}" \
+            -smbios "type=1,manufacturer=${OEM_MANU},product=${OEM_PROD}"
+          BASH
+
+          chmod +x qemu-wrapper/qemu-system-x86_64
 
       - name: Generate setup-ui.ps1
         shell: bash
@@ -61,28 +95,6 @@ jobs:
           $suffix = -join (1..6 | ForEach-Object { $chars | Get-Random })
           $newName = "DESKTOP-$suffix"
           Rename-Computer -NewName $newName -Force
-
-          # OEM Environment Simulation
-          $oemProfiles = @(
-            @{
-              Manufacturer = "Dell Inc."
-              ProductName  = "OptiPlex 7090"
-            },
-            @{
-              Manufacturer = "ASUSTeK COMPUTER INC."
-              ProductName  = "ROG Strix G15"
-            }
-          )
-
-          $selectedOem = Get-Random -InputObject $oemProfiles
-          $biosKey = "HKLM:\HARDWARE\DESCRIPTION\System\BIOS"
-
-          try {
-            Set-ItemProperty -Path $biosKey -Name "SystemManufacturer" -Value $selectedOem.Manufacturer -Type String -ErrorAction Stop
-            Set-ItemProperty -Path $biosKey -Name "SystemProductName" -Value $selectedOem.ProductName -Type String -ErrorAction Stop
-          } catch {
-            Write-Host ("[OEM MOCK] Loi: " + $_.Exception.Message)
-          }
 
           $wallpaperDir = "C:\Temp"
           $wallpaperPath = Join-Path $wallpaperDir "wallpaper.jpg"
@@ -111,11 +123,11 @@ jobs:
           $darkMode = Get-Random -Minimum 0 -Maximum 2
           New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Force | Out-Null
           if ($darkMode -eq 1) {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 0 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 0 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 0 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 0 -Type DWord
           } else {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 1 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 1 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 1 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 1 -Type DWord
           }
 
           $desktop = [Environment]::GetFolderPath("Desktop")
@@ -203,6 +215,7 @@ jobs:
               volumes:
                 - /mnt/windows_data:/storage
                 - ./oem:/oem
+                - ./qemu-wrapper/qemu-system-x86_64:/usr/local/bin/qemu-system-x86_64
           EOF
 
       - name: Boot Windows
