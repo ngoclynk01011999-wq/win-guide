@@ -1,4 +1,4 @@
-name: 🖥️ WINDOWS DOCKURR (UI TEST NODE - RANDOM HW PROFILE)
+name: 🖥️ WINDOWS DOCKURR (UI TEST NODE - STABLE WEB + RANDOM HW PROFILE)
 
 on:
   workflow_dispatch:
@@ -14,8 +14,10 @@ jobs:
 
     steps:
       - name: 🔧 Xay dung ha tang va Script Auto
+        shell: bash
         run: |
-          set -e
+          set -Eeuo pipefail
+
           sudo apt-get update > /dev/null 2>&1
 
           echo "Dang mo khoa o cung cua GitHub..."
@@ -38,8 +40,9 @@ jobs:
           SELECTED_CPU="${CPU_OPTIONS[$((RANDOM % ${#CPU_OPTIONS[@]}))]}"
           echo "CPU model duoc chon: ${SELECTED_CPU}"
 
-          echo "Dang tao PowerShell script khoi tao UI / Telemetry..."
           mkdir -p oem
+
+          echo "Dang tao PowerShell script khoi tao UI / Telemetry..."
           cat > oem/setup-ui.ps1 <<'POWERSHELL'
           $ErrorActionPreference = 'SilentlyContinue'
 
@@ -154,9 +157,9 @@ jobs:
 
           $startupCmd = @'
           @echo off
-          timeout /t 8 /nobreak >nul
+          timeout /t 15 /nobreak >nul
           start "" "ms-settings:about"
-          timeout /t 3 /nobreak >nul
+          timeout /t 5 /nobreak >nul
           start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
           '@
 
@@ -209,29 +212,74 @@ jobs:
                 - ./oem:/oem
           EOF
 
-          echo "Kich hoat Docker ngam..."
-          docker compose up -d > /dev/null 2>&1
+          echo "Kich hoat Docker..."
+          docker compose up -d
+
+          echo "===== DOCKER COMPOSE PS ====="
+          docker compose ps || true
+
+          echo "===== DOI CONTAINER KHOI DONG ====="
+          sleep 15
+
+          echo "===== KIEM TRA CONG 8006 NO BO ====="
+          READY_8006=0
+          for i in $(seq 1 90); do
+            if docker compose exec -T windows sh -lc "ss -ltn 2>/dev/null | grep -q ':8006 '" >/dev/null 2>&1; then
+              READY_8006=1
+              echo "Cong 8006 trong container da lang nghe."
+              break
+            fi
+
+            if docker compose logs windows --tail=20 2>/dev/null | grep -Ei "web|8006|novnc|guacamole|listening|started" >/dev/null 2>&1; then
+              echo "Phat hien dau hieu web service dang len..."
+            fi
+
+            echo "Cho web viewer san sang... lan $i/90"
+            sleep 5
+          done
+
+          if [ "$READY_8006" -ne 1 ]; then
+            echo "===== CANH BAO: 8006 CHUA READY SAU THOI GIAN CHO ====="
+            docker compose ps || true
+            docker compose logs windows --tail=200 || true
+          fi
 
           echo "Tai va mo duong ham Kami Tunnel..."
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
 
-          nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
-          sleep 5
-          nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
+          rm -f kami_tunnel_3389.log kami_tunnel_8006.log kami_tunnel.txt
+
+          nohup ./kami-tunnel 3389 > kami_tunnel_3389.log 2>&1 &
+          sleep 8
+          nohup ./kami-tunnel 8006 > kami_tunnel_8006.log 2>&1 &
+          sleep 8
+
+          echo "===== NOI DUNG LOG TUNNEL ====="
+          tail -n 50 kami_tunnel_3389.log || true
+          tail -n 50 kami_tunnel_8006.log || true
 
       - name: 🌐 LAY THONG TIN KET NOI RDP
+        shell: bash
         run: |
+          set -Eeuo pipefail
+
           echo "Dang lay IP duong ham..."
           echo ""
 
+          echo "===== KIEM TRA TINH TRANG CONTAINER ====="
+          docker compose ps || true
+
+          echo "===== LOG WINDOWS GAN NHAT ====="
+          docker compose logs windows --tail=120 || true
+
           RDP_IP=""
           RDP_RETRY=0
-          while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
+          while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 90 ]; do
             if [ -f kami_tunnel.txt ]; then
-              RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
-              if [[ "$RDP_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
+              RDP_CONTENT=$(awk 'NF{print; exit}' kami_tunnel.txt 2>/dev/null || true)
+              if [[ "${RDP_CONTENT:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
                 RDP_IP="$RDP_CONTENT"
                 break
               fi
@@ -242,10 +290,10 @@ jobs:
 
           WEB_IP=""
           WEB_RETRY=0
-          while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
+          while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 90 ]; do
             if [ -f kami_tunnel.txt ]; then
-              WEB_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
-              if [[ "$WEB_CONTENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "$RDP_IP" ]; then
+              WEB_CONTENT=$(awk 'NF{line=$0} END{print line}' kami_tunnel.txt 2>/dev/null || true)
+              if [[ "${WEB_CONTENT:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "${RDP_IP:-}" ]; then
                 WEB_IP="$WEB_CONTENT"
                 break
               fi
@@ -254,7 +302,16 @@ jobs:
             WEB_RETRY=$((WEB_RETRY + 1))
           done
 
-          if [ -z "$WEB_IP" ] && [ -n "$RDP_IP" ]; then
+          echo "===== KIEM TRA CONG NO BO HOST ====="
+          ss -ltn || true
+
+          if [ -z "${RDP_IP:-}" ]; then
+            echo "Khong lay duoc RDP tunnel."
+            exit 1
+          fi
+
+          if [ -z "${WEB_IP:-}" ]; then
+            echo "Khong lay duoc WEB tunnel, thu fallback map cung host voi port tunnel cuoi."
             BASE_IP="${RDP_IP%:*}"
             WEB_IP="${BASE_IP}:8006"
           fi
@@ -262,16 +319,21 @@ jobs:
           echo "======================================================================="
           echo "  ✅ WINDOWS 10 PRO (UI TEST NODE) - DA SAN SANG SU DUNG"
           echo "======================================================================="
-          echo "  🌐  Ket noi RDP    : $RDP_IP"
+          echo "  🌐  Ket noi RDP    : ${RDP_IP}"
           echo "  👤  Tai khoan      : user"
           echo "  🔐  Mat khau       : ngoc0102@"
           echo "  🧠  CPU Profile    : ${SELECTED_CPU}"
-          echo "  🌍  Xem tren Web   : http://$WEB_IP"
+          echo "  🌍  Xem tren Web   : http://${WEB_IP}"
           echo "======================================================================="
+          echo ""
+          echo "Luu y:"
+          echo "- Neu web viewer vua reboot xong, hay doi 1-3 phut roi F5."
+          echo "- Uu tien dung RDP neu web viewer tam thoi chua phan hoi."
+          echo ""
+
           echo "Dang duy tri may chu 6 tieng..."
           for i in {1..72}; do
             ELAPSED=$((i * 5))
-            REMAINING=$((360 - ELAPSED))
-            echo "✅ May chu van song ($ELAPSED phut / 360 phut)"
+            echo "✅ May chu van song (${ELAPSED} phut / 360 phut)"
             sleep 300
           done
