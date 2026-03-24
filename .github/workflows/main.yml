@@ -27,8 +27,145 @@ jobs:
           RANDOM_RAM="${RAM_OPTIONS[$((RANDOM % ${#RAM_OPTIONS[@]}))]}"
           echo "RAM_SIZE duoc chon: ${RANDOM_RAM}"
 
-          echo "Dang tao script khoi tao Windows sach (oem/install.bat)..."
+          echo "Dang chon profile CPU ngau nhien..."
+          CPU_OPTIONS=(
+            "12th Gen Intel(R) Core(TM) i5-12400F"
+            "13th Gen Intel(R) Core(TM) i7-13700K"
+            "Intel(R) Core(TM) i5-10400F @ 2.90GHz"
+            "AMD Ryzen 5 5600X 6-Core Processor"
+            "AMD Ryzen 7 5800X 8-Core Processor"
+          )
+          SELECTED_CPU="${CPU_OPTIONS[$((RANDOM % ${#CPU_OPTIONS[@]}))]}"
+          echo "CPU model duoc chon: ${SELECTED_CPU}"
+
+          echo "Dang tao PowerShell script khoi tao UI / Telemetry..."
           mkdir -p oem
+          cat > oem/setup-ui.ps1 <<'POWERSHELL'
+          $ErrorActionPreference = 'SilentlyContinue'
+
+          Write-Host "==================================================="
+          Write-Host "[UI TEST] DANG KHOI TAO MOI TRUONG WINDOWS"
+          Write-Host "==================================================="
+
+          # [1] Lam sach thong tin OEM
+          Write-Host "[1/7] Dang lam sach thong tin OEM..."
+          Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Recurse -Force -ErrorAction SilentlyContinue
+
+          # [2] Mock InstallDate: random tu 6 thang den 2 nam truoc
+          Write-Host "[2/7] Dang mo phong vong doi he dieu hanh (InstallDate)..."
+          $now = Get-Date
+          $monthsBack = Get-Random -Minimum 6 -Maximum 25
+          $randomPast = $now.AddMonths(-$monthsBack).AddDays(-(Get-Random -Minimum 0 -Maximum 28))
+          $unixTimestamp = [int][Math]::Floor(([DateTimeOffset]$randomPast).ToUnixTimeSeconds())
+          Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name "InstallDate" -Value $unixTimestamp -Type DWord
+          Write-Host ("InstallDate moi: " + $unixTimestamp + " (" + $randomPast.ToString("yyyy-MM-dd HH:mm:ss") + ")")
+
+          # [3] Sinh ComputerName ngau nhien dang DESKTOP-XXXXXX
+          Write-Host "[3/7] Dang sinh hostname ngau nhien..."
+          $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.ToCharArray()
+          $suffix = -join (1..6 | ForEach-Object { $chars | Get-Random })
+          $newName = "DESKTOP-$suffix"
+          Write-Host ("Hostname moi: " + $newName)
+          Rename-Computer -NewName $newName -Force
+
+          # [4] Tai wallpaper ngau nhien va set wallpaper bang SystemParametersInfo
+          Write-Host "[4/7] Dang tai va thiet lap wallpaper..."
+          $wallpaperDir = "C:\Temp"
+          $wallpaperPath = Join-Path $wallpaperDir "wallpaper.jpg"
+          New-Item -ItemType Directory -Path $wallpaperDir -Force | Out-Null
+
+          try {
+            Invoke-WebRequest -Uri "https://picsum.photos/1920/1080" -OutFile $wallpaperPath -UseBasicParsing
+          } catch {
+            Write-Host "Khong tai duoc wallpaper ngau nhien, bo qua."
+          }
+
+          if (Test-Path $wallpaperPath) {
+            Add-Type @"
+          using System;
+          using System.Runtime.InteropServices;
+          public class Wallpaper {
+              [DllImport("user32.dll", SetLastError = true)]
+              public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+          }
+          "@
+
+            Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "10"
+            Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -Value "0"
+            [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
+          }
+
+          # [5] Bat/tat Dark Mode ngau nhien
+          Write-Host "[5/7] Dang random che do Light/Dark..."
+          $darkMode = Get-Random -Minimum 0 -Maximum 2
+          New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Force | Out-Null
+          if ($darkMode -eq 1) {
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 0 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 0 -Type DWord
+            Write-Host "Da bat Dark Mode."
+          } else {
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 1 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 1 -Type DWord
+            Write-Host "Dang o Light Mode."
+          }
+
+          # [6] Tao workspace gia lap tren Desktop
+          Write-Host "[6/7] Dang tao workspace test tren Desktop..."
+          $desktop = [Environment]::GetFolderPath("Desktop")
+          $folderPool = @("Work", "Projects", "Personal", "Reports", "Archive")
+          $shortcutPool = @(
+            @{ Name = "VLC";       Target = "C:\Program Files\VideoLAN\VLC\vlc.exe" },
+            @{ Name = "7-Zip";     Target = "C:\Program Files\7-Zip\7zFM.exe" },
+            @{ Name = "Firefox";   Target = "C:\Program Files\Mozilla Firefox\firefox.exe" },
+            @{ Name = "Notepad++"; Target = "C:\Program Files\Notepad++\notepad++.exe" }
+          )
+
+          $folderCount = Get-Random -Minimum 2 -Maximum 4
+          $selectedFolders = $folderPool | Sort-Object { Get-Random } | Select-Object -First $folderCount
+          foreach ($folder in $selectedFolders) {
+            New-Item -ItemType Directory -Path (Join-Path $desktop $folder) -Force | Out-Null
+          }
+
+          $selectedApps = $shortcutPool | Sort-Object { Get-Random } | Select-Object -First 2
+          $wsh = New-Object -ComObject WScript.Shell
+          foreach ($app in $selectedApps) {
+            $shortcutPath = Join-Path $desktop ($app.Name + ".lnk")
+            $shortcut = $wsh.CreateShortcut($shortcutPath)
+
+            if (Test-Path $app.Target) {
+              $shortcut.TargetPath = $app.Target
+              $shortcut.WorkingDirectory = Split-Path $app.Target -Parent
+              $shortcut.IconLocation = $app.Target
+            } else {
+              $shortcut.TargetPath = "$env:SystemRoot\System32\cmd.exe"
+              $shortcut.Arguments = "/c exit"
+              $shortcut.WorkingDirectory = "$env:SystemRoot\System32"
+              $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,2"
+            }
+
+            $shortcut.Description = "$($app.Name) shortcut for UI workspace simulation"
+            $shortcut.Save()
+          }
+
+          # [7] Tao Startup script mo Settings -> About va Edge tradingradarapp
+          Write-Host "[7/7] Dang tao Startup script mo Settings va trang test..."
+          $startupDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
+          New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
+
+          $startupCmd = @'
+          @echo off
+          timeout /t 8 /nobreak >nul
+          start "" "ms-settings:about"
+          timeout /t 3 /nobreak >nul
+          start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
+          '@
+
+          Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
+
+          Write-Host "Hoan tat script khoi tao. Chuan bi reboot..."
+          POWERSHELL
+
+          echo "Dang tao script khoi tao Windows sach (oem/install.bat)..."
           cat > oem/install.bat <<'BAT'
           @echo off
           setlocal EnableExtensions EnableDelayedExpansion
@@ -37,40 +174,9 @@ jobs:
           echo [UI TEST] DANG KHOI TAO MOI TRUONG WINDOWS
           echo ===================================================
 
-          echo [1/5] Dang lam sach thong tin OEM...
-          REG DELETE "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" /f >nul 2>&1
+          powershell -NoProfile -ExecutionPolicy Bypass -File "C:\oem\setup-ui.ps1"
 
-          echo [2/5] Dang mo phong CPU...
-          set "CPU_0=12th Gen Intel(R) Core(TM) i5-12400F"
-          set "CPU_1=13th Gen Intel(R) Core(TM) i7-13700K"
-          set "CPU_2=Intel(R) Core(TM) i5-10400F @ 2.90GHz"
-          set /a CPU_INDEX=%RANDOM% %% 3
-          call set "SELECTED_CPU=%%CPU_!CPU_INDEX!%%"
-
-          REG ADD "HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0" ^
-            /v ProcessorNameString /t REG_SZ /d "!SELECTED_CPU!" /f >nul
-
-          echo CPU duoc gan: !SELECTED_CPU!
-
-          echo [3/5] Dang sinh hostname ngau nhien...
-          powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-            "$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.ToCharArray(); " ^
-            "$suffix = -join (1..6 | ForEach-Object { $chars | Get-Random }); " ^
-            "$newName = 'DESKTOP-' + $suffix; " ^
-            "Write-Host ('Hostname moi: ' + $newName); " ^
-            "Rename-Computer -NewName $newName -Force"
-
-          echo [4/5] Dang tao Startup script mo trang test va Settings...
-          set "STARTUP_DIR=%APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup"
-          if not exist "%STARTUP_DIR%" mkdir "%STARTUP_DIR%"
-
-          > "%STARTUP_DIR%\open-test-page.cmd" echo @echo off
-          >> "%STARTUP_DIR%\open-test-page.cmd" echo timeout /t 8 /nobreak ^>nul
-          >> "%STARTUP_DIR%\open-test-page.cmd" echo start "" "ms-settings:about"
-          >> "%STARTUP_DIR%\open-test-page.cmd" echo timeout /t 3 /nobreak ^>nul
-          >> "%STARTUP_DIR%\open-test-page.cmd" echo start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
-
-          echo [5/5] Hoan tat. Chuan bi khoi dong lai de ap dung ten may moi...
+          echo Dang khoi dong lai de ap dung ten may va giao dien moi...
           shutdown /r /t 10
 
           endlocal
@@ -92,6 +198,7 @@ jobs:
                 RAM_SIZE: "${RANDOM_RAM}"
                 CPU_CORES: "4"
                 DISK_SIZE: "128G"
+                ARGUMENTS: "-cpu qemu64,model_id='${SELECTED_CPU}'"
               devices:
                 - /dev/kvm
               ports:
@@ -158,6 +265,7 @@ jobs:
           echo "  🌐  Ket noi RDP    : $RDP_IP"
           echo "  👤  Tai khoan      : user"
           echo "  🔐  Mat khau       : ngoc0102@"
+          echo "  🧠  CPU Profile    : ${SELECTED_CPU}"
           echo "  🌍  Xem tren Web   : http://$WEB_IP"
           echo "======================================================================="
           echo "Dang duy tri may chu 6 tieng..."
