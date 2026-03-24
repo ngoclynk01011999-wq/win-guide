@@ -62,12 +62,35 @@ jobs:
           $newName = "DESKTOP-$suffix"
           Rename-Computer -NewName $newName -Force
 
+          # OEM Environment Simulation
+          $oemProfiles = @(
+            @{
+              Manufacturer = "Dell Inc."
+              ProductName  = "OptiPlex 7090"
+            },
+            @{
+              Manufacturer = "ASUSTeK COMPUTER INC."
+              ProductName  = "ROG Strix G15"
+            }
+          )
+
+          $selectedOem = Get-Random -InputObject $oemProfiles
+          $biosKey = "HKLM:\HARDWARE\DESCRIPTION\System\BIOS"
+
+          try {
+            Set-ItemProperty -Path $biosKey -Name "SystemManufacturer" -Value $selectedOem.Manufacturer -Type String -ErrorAction Stop
+            Set-ItemProperty -Path $biosKey -Name "SystemProductName" -Value $selectedOem.ProductName -Type String -ErrorAction Stop
+          } catch {
+            Write-Host ("[OEM MOCK] Loi: " + $_.Exception.Message)
+          }
+
           $wallpaperDir = "C:\Temp"
           $wallpaperPath = Join-Path $wallpaperDir "wallpaper.jpg"
           New-Item -ItemType Directory -Path $wallpaperDir -Force | Out-Null
           try {
             Invoke-WebRequest -Uri "https://picsum.photos/1920/1080" -OutFile $wallpaperPath -UseBasicParsing
           } catch {}
+
           if (Test-Path $wallpaperPath) {
             $code = @(
               'using System;'
@@ -88,11 +111,11 @@ jobs:
           $darkMode = Get-Random -Minimum 0 -Maximum 2
           New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Force | Out-Null
           if ($darkMode -eq 1) {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 0 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 0 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 0 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 0 -Type DWord
           } else {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 1 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 1 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 1 -Type DWord
+            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 1 -Type DWord
           }
 
           $desktop = [Environment]::GetFolderPath("Desktop")
@@ -137,7 +160,7 @@ jobs:
             'timeout /t 8 /nobreak >nul'
             'start "" "ms-settings:about"'
             'timeout /t 3 /nobreak >nul'
-            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"'
+            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=urgot&utm_campaign=thongkuto&tid=tihon"'
           ) -join [Environment]::NewLine
 
           Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
