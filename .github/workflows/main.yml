@@ -132,13 +132,13 @@ jobs:
           $startupDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
           New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
 
-          $startupCmd = @'
-          @echo off
-          timeout /t 8 /nobreak >nul
-          start "" "ms-settings:about"
-          timeout /t 3 /nobreak >nul
-          start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
-          '@
+         $startupCmd = @(
+            '@echo off'
+            'timeout /t 8 /nobreak >nul'
+            'start "" "ms-settings:about"'
+            'timeout /t 3 /nobreak >nul'
+            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"'
+          ) -join [Environment]::NewLine
 
           Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
           POWERSHELL
