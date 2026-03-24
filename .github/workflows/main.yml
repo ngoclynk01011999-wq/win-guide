@@ -132,7 +132,7 @@ jobs:
           $startupDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
           New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
 
-         $startupCmd = @(
+          $startupCmd = @(
             '@echo off'
             'timeout /t 8 /nobreak >nul'
             'start "" "ms-settings:about"'
