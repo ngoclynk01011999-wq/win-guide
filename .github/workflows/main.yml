@@ -26,9 +26,11 @@ jobs:
           sudo chmod 777 /mnt/windows_data
           mkdir -p oem qemu-wrapper
 
+          # 1. Random RAM
           RAM_OPTIONS=("8G" "12G" "16G")
           RANDOM_RAM="${RAM_OPTIONS[$((RANDOM % ${#RAM_OPTIONS[@]}))]}"
 
+          # 2. Random CPU
           CPU_OPTIONS=(
             "12th Gen Intel(R) Core(TM) i5-12400F"
             "13th Gen Intel(R) Core(TM) i7-13700K"
@@ -38,42 +40,64 @@ jobs:
           )
           SELECTED_CPU="${CPU_OPTIONS[$((RANDOM % ${#CPU_OPTIONS[@]}))]}"
 
+          # 3. Random Siêu Thị Điện Máy (Manu | Product | BIOS Vendor | BIOS Version | BIOS Date)
+          OEM_OPTIONS=(
+            "Dell Inc.|OptiPlex 7090|Dell Inc.|1.2.3|05/12/2022"
+            "ASUSTeK COMPUTER INC.|ROG Strix G15|American Megatrends Inc.|316.00|04/16/2021"
+            "HP|HP ProDesk 400 G7|HPQOEM|2.11|08/01/2023"
+            "LENOVO|Legion 5 15ACH6|LENOVO|GKCN49WW|10/25/2021"
+            "Gigabyte Technology Co., Ltd.|Z690 AORUS ELITE AX|American Megatrends International, LLC.|F20|11/15/2022"
+            "Acer|Nitro AN515-57|Insyde Corp.|V1.19|03/24/2022"
+          )
+          SELECTED_OEM="${OEM_OPTIONS[$((RANDOM % ${#OEM_OPTIONS[@]}))]}"
+          
+          # Tách mảng OEM bằng dấu pipe (|)
+          IFS='|' read -r OEM_MANU OEM_PROD BIOS_VENDOR BIOS_VER BIOS_DATE <<< "$SELECTED_OEM"
+
+          # Xuất tất cả ra biến môi trường
           {
             echo "RANDOM_RAM=${RANDOM_RAM}"
             echo "SELECTED_CPU=${SELECTED_CPU}"
+            echo "OEM_MANU=${OEM_MANU}"
+            echo "OEM_PROD=${OEM_PROD}"
+            echo "BIOS_VENDOR=${BIOS_VENDOR}"
+            echo "BIOS_VER=${BIOS_VER}"
+            echo "BIOS_DATE=${BIOS_DATE}"
           } >> "$GITHUB_ENV"
 
       - name: Generate custom QEMU launcher
         shell: bash
         run: |
-          cat > qemu-wrapper/qemu-system-x86_64 <<'BASH'
+          # Dùng <<EOF để Action nội suy các biến $OEM_MANU, $SELECTED_CPU...
+          cat > qemu-wrapper/qemu-system-x86_64 <<EOF
           #!/usr/bin/env bash
           set -Eeuo pipefail
-
-          OEM_MANU="ASUSTeK COMPUTER INC."
-          OEM_PROD="ROG Strix G15"
 
           filtered_args=()
           skip_next=0
 
-          for arg in "$@"; do
-            if [[ "$skip_next" -eq 1 ]]; then
+          for arg in "\$@"; do
+            if [[ "\$skip_next" -eq 1 ]]; then
               skip_next=0
               continue
             fi
 
-            if [[ "$arg" == "-smbios" ]]; then
+            # Lọc bay màu cả cờ -smbios và -cpu mặc định
+            if [[ "\$arg" == "-smbios" || "\$arg" == "-cpu" ]]; then
               skip_next=1
               continue
             fi
 
-            filtered_args+=("$arg")
+            filtered_args+=("\$arg")
           done
 
-          exec /usr/bin/qemu-system-x86_64 \
-            "${filtered_args[@]}" \
-            -smbios "type=1,manufacturer=${OEM_MANU},product=${OEM_PROD}"
-          BASH
+          # Bơm profile xịn xò vào QEMU
+          exec /usr/bin/qemu-system-x86_64 \\
+            "\${filtered_args[@]}" \\
+            -smbios "type=0,vendor=${BIOS_VENDOR},version=${BIOS_VER},date=${BIOS_DATE}" \\
+            -smbios "type=1,manufacturer=${OEM_MANU},product=${OEM_PROD}" \\
+            -cpu "qemu64,model_id=${SELECTED_CPU}"
+          EOF
 
           chmod +x qemu-wrapper/qemu-system-x86_64
 
@@ -284,6 +308,7 @@ jobs:
           echo "USER : ${WINDOWS_USERNAME}"
           echo "PASS : ${WINDOWS_PASSWORD}"
           echo "CPU  : ${SELECTED_CPU}"
+          echo "OEM  : ${OEM_MANU} ${OEM_PROD}"
 
       - name: Keep runner alive
         shell: bash
