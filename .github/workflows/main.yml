@@ -26,47 +26,87 @@ jobs:
           sudo chmod 777 /mnt/windows_data
           mkdir -p oem qemu-wrapper
 
-          # 1. Random RAM
+          # 1. Random RAM (Xài shuf xịn)
           RAM_OPTIONS=("8G" "12G" "16G")
           RANDOM_RAM=$(shuf -e "${RAM_OPTIONS[@]}" -n 1)
 
-          # 2. SIÊU THỊ ĐIỆN MÁY REAL 100% (Khóa chết Combo: CPU | Hãng | Tên Máy | Hãng BIOS | Ver BIOS | Ngày BIOS)
+          # 2. Kho 60 Cấu Hình Real 100% (Khóa chết Combo)
           HW_PROFILES=(
-            # --- ĐỘI DELL ---
-            "12th Gen Intel(R) Core(TM) i7-12700H|Dell Inc.|XPS 15 9520|Dell Inc.|1.11.0|11/14/2022"
-            "Intel(R) Core(TM) i5-11500 CPU @ 2.70GHz|Dell Inc.|OptiPlex 7090|Dell Inc.|1.2.3|05/12/2022"
-            "AMD Ryzen 7 6800H with Radeon Graphics|Alienware|Alienware m15 R7 AMD|Alienware|1.4.2|08/11/2022"
-            
-            # --- ĐỘI ASUS ---
-            "AMD Ryzen 7 6800H with Radeon Graphics|ASUSTeK COMPUTER INC.|ROG Strix G15 G513RM|American Megatrends International, LLC.|G513RM.315|04/16/2022"
-            "11th Gen Intel(R) Core(TM) i5-11400H|ASUSTeK COMPUTER INC.|ASUS TUF Gaming F15 FX506HC|American Megatrends International, LLC.|FX506HC.311|11/05/2022"
-            "13th Gen Intel(R) Core(TM) i9-13900K|ASUSTeK COMPUTER INC.|ROG Maximus Z790 HERO|American Megatrends International, LLC.|0802|12/23/2022"
-            
-            # --- ĐỘI HP ---
-            "11th Gen Intel(R) Core(TM) i7-1165G7|HP|HP Pavilion Laptop 15-eg0xxx|AMI|F.21|05/18/2022"
-            "AMD Ryzen 7 5800X 8-Core Processor|HP|OMEN 30L Desktop GT13-1xxx|AMI|F.11|10/25/2021"
-            "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz|HP|HP ProDesk 400 G7|HPQOEM|2.11|08/01/2023"
-            
-            # --- ĐỘI LENOVO ---
+            # =========================
+            # BUSINESS / OFFICE
+            # =========================
+            "Intel(R) Core(TM) i5-10500 CPU @ 3.10GHz|HP|HP ProDesk 400 G7|HPQOEM|S01 Ver. 02.13.00|08/01/2023"
+            "Intel(R) Core(TM) i5-12500|Dell Inc.|OptiPlex 7000 Small Form Factor|Dell Inc.|1.9.1|08/29/2023"
+            "Intel(R) Core(TM) i7-12700|Dell Inc.|OptiPlex 7000 Tower|Dell Inc.|1.10.2|10/17/2023"
+            "Intel(R) Core(TM) i5-13500|Dell Inc.|OptiPlex 7010 Tower|Dell Inc.|1.3.0|09/26/2023"
+            "Intel(R) Core(TM) i7-1260P|Dell Inc.|Latitude 7430|Dell Inc.|1.19.0|09/20/2023"
+            "Intel(R) Core(TM) i5-1245U|Dell Inc.|Latitude 5430|Dell Inc.|1.18.0|07/27/2023"
+            "Intel(R) Core(TM) i5-1335U|Dell Inc.|Latitude 5440|Dell Inc.|1.7.0|10/24/2023"
+            "Intel(R) Core(TM) i7-1365U|Dell Inc.|Latitude 7440|Dell Inc.|1.6.0|11/09/2023"
+            "Intel(R) Core(TM) i7-1185G7|HP|HP EliteBook 840 G8 Notebook PC|HPQOEM|T70 Ver. 01.09.01|06/14/2022"
+            "Intel(R) Core(TM) i5-1240P|HP|HP ProBook 440 14 inch G9 Notebook PC|HPQOEM|U85 Ver. 01.07.00|11/15/2022"
+            "Intel(R) Core(TM) i7-1265U|HP|HP EliteBook 840 G9 Notebook PC|HP|U78 Ver. 01.08.00|09/12/2023"
+            "Intel(R) Core(TM) i5-1235U|HP|HP EliteBook 640 G9 Notebook PC|HP|U79 Ver. 01.10.00|10/04/2023"
+            "Intel(R) Core(TM) i5-12500|LENOVO|ThinkCentre M70t Gen 3|LENOVO|M46KT38A|09/19/2023"
+            "Intel(R) Core(TM) i7-12700|LENOVO|ThinkCentre M90t Gen 3|LENOVO|M2AKT53A|08/16/2023"
+            "Intel(R) Core(TM) i7-1260P|LENOVO|ThinkPad T14 Gen 3|LENOVO|N3MET08W (1.05)|08/16/2022"
+            "Intel(R) Core(TM) i5-1235U|LENOVO|ThinkBook 14 G4 IAP|LENOVO|J7CN40WW|09/02/2022"
+            "Intel(R) Core(TM) i7-1255U|LENOVO|ThinkPad E14 Gen 4|LENOVO|R1BET72W|10/10/2023"
+            "Intel(R) Core(TM) i7-1265U|LENOVO|ThinkPad X1 Carbon Gen 10|LENOVO|N3XET82W|11/15/2023"
+            "Intel(R) Core(TM) i7-1260P|ASUSTeK COMPUTER INC.|ExpertBook B5 B5402CBA|American Megatrends International, LLC.|311|10/07/2022"
+            "Intel(R) Core(TM) i5-1235U|ASUSTeK COMPUTER INC.|ExpertBook B1 B1402CBA|American Megatrends International, LLC.|303|08/18/2023"
+            "Intel(R) Core(TM) i7-1360P|ASUSTeK COMPUTER INC.|ExpertBook B9 B9403CVA|American Megatrends International, LLC.|302|07/11/2023"
+            "Intel(R) Core(TM) i7-1185G7|Acer|TravelMate P4 TMP414-52|Insyde Corp.|V1.07|09/06/2022"
+            "Intel(R) Core(TM) i5-1235U|Acer|TravelMate P2 TMP214-54|Insyde Corp.|V1.15|06/21/2023"
+            "Intel(R) Core(TM) i7-1185G7|Microsoft Corporation|Surface Laptop 4|Microsoft Corporation|18.102.143|08/25/2022"
+
+            # =========================
+            # GAMING
+            # =========================
+            "AMD Ryzen 7 6800H with Radeon Graphics|ASUSTeK COMPUTER INC.|ROG Strix G15 G513RM|American Megatrends International, LLC.|315|04/16/2022"
+            "AMD Ryzen 9 6900HX with Radeon Graphics|ASUSTeK COMPUTER INC.|ROG Strix Scar 15 G533ZS|American Megatrends International, LLC.|313|07/28/2022"
+            "Intel(R) Core(TM) i5-11400H|ASUSTeK COMPUTER INC.|ASUS TUF Gaming F15 FX506HC|American Megatrends International, LLC.|311|11/05/2022"
+            "Intel(R) Core(TM) i7-12700H|ASUSTeK COMPUTER INC.|TUF Gaming F15 FX507ZM|American Megatrends International, LLC.|315|09/14/2022"
+            "AMD Ryzen 7 7735HS with Radeon Graphics|ASUSTeK COMPUTER INC.|TUF Gaming A15 FA507NV|American Megatrends International, LLC.|307|08/25/2023"
             "AMD Ryzen 5 5600H with Radeon Graphics|LENOVO|Legion 5 15ACH6|LENOVO|GKCN53WW|05/09/2022"
-            "12th Gen Intel(R) Core(TM) i7-1260P|LENOVO|ThinkPad T14 Gen 3|LENOVO|N3MET08W (1.05)|08/16/2022"
-            "Intel(R) Core(TM) i5-10400F CPU @ 2.90GHz|LENOVO|IdeaCentre G5 14IMB05|LENOVO|O4NKT19A|12/23/2020"
-            
-            # --- ĐỘI ACER ---
-            "11th Gen Intel(R) Core(TM) i5-11400H|Acer|Nitro AN515-57|Insyde Corp.|V1.19|03/24/2022"
+            "Intel(R) Core(TM) i7-12700H|LENOVO|Legion 5i Pro 16IAH7H|LENOVO|J2CN40WW|10/20/2022"
+            "AMD Ryzen 7 6800H with Radeon Graphics|LENOVO|Legion 7 16ARHA7|LENOVO|K9CN38WW|08/17/2022"
+            "Intel(R) Core(TM) i7-12700H|Micro-Star International Co., Ltd.|Katana GF66 12UC|American Megatrends International, LLC.|E1584IMS.10A|06/15/2022"
+            "Intel(R) Core(TM) i7-12650H|Micro-Star International Co., Ltd.|Thin GF63 12VE|American Megatrends International, LLC.|E16R8IMS.10B|09/22/2023"
+            "Intel(R) Core(TM) i7-1280P|Micro-Star International Co., Ltd.|Stealth 14 Studio A13VF|American Megatrends International, LLC.|E14K1IMS.108|07/19/2023"
+            "Intel(R) Core(TM) i5-11400H|Acer|Nitro AN515-57|Insyde Corp.|V1.19|03/24/2022"
             "AMD Ryzen 7 5800H with Radeon Graphics|Acer|Nitro AN515-45|Insyde Corp.|V1.10|05/06/2021"
-            
-            # --- ĐỘI MSI ---
-            "12th Gen Intel(R) Core(TM) i7-12700H|Micro-Star International Co., Ltd.|Katana GF66 12UC|American Megatrends International, LLC.|E1584IMS.10A|06/15/2022"
-            "AMD Ryzen 5 5600X 6-Core Processor|Micro-Star International Co., Ltd.|MAG B550 TOMAHAWK (MS-7C91)|American Megatrends International, LLC.|A.C0|03/22/2023"
-            
-            # --- ĐỘI GIGABYTE ---
-            "13th Gen Intel(R) Core(TM) i5-13600K|Gigabyte Technology Co., Ltd.|Z790 AORUS ELITE AX|American Megatrends International, LLC.|F3|11/15/2022"
-            "12th Gen Intel(R) Core(TM) i7-12700H|GIGABYTE|AORUS 15 XE4|American Megatrends International, LLC.|FB05|04/10/2022"
-            
-            # --- HÀNG ĐỘC LẠ ---
-            "12th Gen Intel(R) Core(TM) i7-12800H|Razer|Blade 15 Advanced Model (Early 2022)|American Megatrends International, LLC.|1.06|03/11/2022"
-            "11th Gen Intel(R) Core(TM) i7-1185G7|Microsoft Corporation|Surface Laptop 4|Microsoft Corporation|18.102.143|08/25/2022"
+            "Intel(R) Core(TM) i7-12700H|Acer|Predator Helios 300 PH315-55|Insyde Corp.|V1.12|07/21/2022"
+            "AMD Ryzen 9 6900HX with Radeon Graphics|Acer|Predator Helios 300 PH315-55s|Insyde Corp.|V1.05|11/14/2022"
+            "Intel(R) Core(TM) i7-12700H|GIGABYTE|AORUS 15 XE4|American Megatrends International, LLC.|FB05|04/10/2022"
+            "Intel(R) Core(TM) i7-13700H|GIGABYTE|G5 KF|American Megatrends International, LLC.|FB09|08/03/2023"
+            "Intel(R) Core(TM) i7-12800H|Razer|Blade 15 Advanced Model (Early 2022)|Razer|2.06|01/02/2024"
+            "Intel(R) Core(TM) i7-13800H|Razer|Blade 16 (2023)|Razer|1.05|06/08/2023"
+            "Intel(R) Core(TM) i7-12700H|HP|OMEN by HP Laptop 16-b1xxx|AMI|F.20|10/21/2022"
+            "AMD Ryzen 7 7840HS with Radeon 780M Graphics|HP|Victus Gaming Laptop 15-fb2xxx|AMI|F.08|09/14/2023"
+
+            # =========================
+            # WORKSTATION / CREATOR
+            # =========================
+            "Intel(R) Core(TM) i7-12700|Dell Inc.|Precision 3660 Tower|Dell Inc.|1.13.0|10/17/2023"
+            "Intel(R) Core(TM) i7-12700H|Dell Inc.|Precision 5570|Dell Inc.|1.14.0|11/01/2023"
+            "Intel(R) Core(TM) i9-12900K|Dell Inc.|Precision 7865 Tower|Dell Inc.|1.8.0|09/05/2023"
+            "Intel(R) Core(TM) i7-13700|Dell Inc.|Precision 3460 Small Form Factor|Dell Inc.|1.5.0|12/12/2023"
+            "Intel(R) Core(TM) i7-12700H|HP|HP ZBook Power 15.6 inch G9 Mobile Workstation PC|HP|N78 Ver. 01.08.00|07/12/2023"
+            "Intel(R) Core(TM) i7-12700|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.08.01|07/12/2023"
+            "Intel(R) Core(TM) i9-13900K|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.11.00|11/08/2023"
+            "Intel(R) Core(TM) i7-13800H|HP|HP ZBook Studio 16 inch G10 Mobile Workstation PC|HP|W71 Ver. 01.03.00|09/19/2023"
+            "Intel(R) Core(TM) i7-12700H|LENOVO|ThinkPad P1 Gen 5|LENOVO|N3FET33W (1.15)|11/10/2022"
+            "Intel(R) Core(TM) i7-12800HX|LENOVO|ThinkPad P16 Gen 1|LENOVO|N3EET47W|08/23/2023"
+            "Intel(R) Core(TM) i9-12900HX|LENOVO|ThinkStation P360 Ultra|LENOVO|M70KT35A|07/27/2023"
+            "Intel(R) Core(TM) i7-12700H|ASUSTeK COMPUTER INC.|Zenbook Pro 14 Duo OLED UX8402ZE|American Megatrends International, LLC.|307|09/29/2022"
+            "Intel(R) Core(TM) i9-13980HX|ASUSTeK COMPUTER INC.|ProArt Studiobook 16 OLED H7604JI|American Megatrends International, LLC.|302|08/30/2023"
+            "Intel(R) Core(TM) i9-13900K|ASUSTeK COMPUTER INC.|ROG Maximus Z790 HERO|American Megatrends International, LLC.|0802|12/23/2022"
+            "Intel(R) Core(TM) i7-12700KF|Micro-Star International Co., Ltd.|Creator P100X 12V|American Megatrends International, LLC.|A.30|08/18/2022"
+            "Intel(R) Core(TM) i9-13900HX|Micro-Star International Co., Ltd.|Creator Z17 HX Studio A13V|American Megatrends International, LLC.|E17N3IMS.106|09/05/2023"
+            "Intel(R) Core(TM) i5-13600K|Gigabyte Technology Co., Ltd.|Z790 AORUS ELITE AX|American Megatrends International, LLC.|F3|11/15/2022"
+            "Intel(R) Core(TM) i7-13700K|Gigabyte Technology Co., Ltd.|B760 AORUS ELITE AX|American Megatrends International, LLC.|F6|06/26/2023"
+            "Intel(R) Core(TM) i9-13980HX|Razer|Blade 18 (2023)|Razer|1.04|07/27/2023"
           )
           SELECTED_PROFILE=$(shuf -e "${HW_PROFILES[@]}" -n 1)
           
@@ -172,24 +212,50 @@ jobs:
 
           $desktop = [Environment]::GetFolderPath("Desktop")
           $folderPool = @("Work", "Projects", "Personal", "Reports", "Archive")
-          $shortcutPool = @(
-            @{ Name = "VLC";       Target = "C:\Program Files\VideoLAN\VLC\vlc.exe" },
-            @{ Name = "7-Zip";     Target = "C:\Program Files\7-Zip\7zFM.exe" },
-            @{ Name = "Firefox";   Target = "C:\Program Files\Mozilla Firefox\firefox.exe" },
-            @{ Name = "Notepad++"; Target = "C:\Program Files\Notepad++\notepad++.exe" }
-          )
-
           $folderCount = Get-Random -Minimum 2 -Maximum 4
           $selectedFolders = $folderPool | Sort-Object { Get-Random } | Select-Object -First $folderCount
           foreach ($folder in $selectedFolders) {
             New-Item -ItemType Directory -Path (Join-Path $desktop $folder) -Force | Out-Null
           }
 
-          $selectedApps = $shortcutPool | Sort-Object { Get-Random } | Select-Object -First 2
+          # 1. Ứng dụng CỨNG (Lúc nào cũng có mặt trên Desktop)
+          $fixedApps = @(
+            @{ Name = "Zalo"; Target = "$env:LOCALAPPDATA\Programs\Zalo\Zalo.exe" },
+            @{ Name = "Telegram"; Target = "$env:APPDATA\Telegram Desktop\Telegram.exe" }
+          )
+
+          # 2. Kho Ứng dụng Động (Random bốc 3-4 cái)
+          $appPool = @(
+            @{ Name = "Google Chrome"; Target = "C:\Program Files\Google\Chrome\Application\chrome.exe" },
+            @{ Name = "Spotify"; Target = "$env:APPDATA\Spotify\Spotify.exe" },
+            @{ Name = "Discord"; Target = "$env:LOCALAPPDATA\Discord\Update.exe" },
+            @{ Name = "Steam"; Target = "C:\Program Files (x86)\Steam\steam.exe" },
+            @{ Name = "Visual Studio Code"; Target = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe" },
+            @{ Name = "Unity Hub"; Target = "C:\Program Files\Unity Hub\Unity Hub.exe" },
+            @{ Name = "Python 3.12"; Target = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" },
+            @{ Name = "OBS Studio"; Target = "C:\Program Files\obs-studio\bin\64bit\obs64.exe" },
+            @{ Name = "CapCut"; Target = "$env:LOCALAPPDATA\CapCut\Apps\CapCut.exe" },
+            @{ Name = "Notion"; Target = "$env:LOCALAPPDATA\Programs\Notion\Notion.exe" },
+            @{ Name = "Epic Games Launcher"; Target = "C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe" },
+            @{ Name = "Postman"; Target = "$env:LOCALAPPDATA\Postman\Postman.exe" },
+            @{ Name = "Excel"; Target = "C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE" },
+            @{ Name = "Word"; Target = "C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE" },
+            @{ Name = "Wireshark"; Target = "C:\Program Files\Wireshark\Wireshark.exe" },
+            @{ Name = "GitHub Desktop"; Target = "$env:LOCALAPPDATA\GitHubDesktop\GitHubDesktop.exe" }
+          )
+
+          # Trộn kho và bốc ngẫu nhiên từ 3 đến 5 app
+          $randomApps = $appPool | Sort-Object { Get-Random } | Select-Object -First (Get-Random -Minimum 3 -Maximum 5)
+          
+          # Gộp Zalo, Telegram với mấy app vừa bốc
+          $allApps = $fixedApps + $randomApps
+
           $wsh = New-Object -ComObject WScript.Shell
-          foreach ($app in $selectedApps) {
+          foreach ($app in $allApps) {
             $shortcutPath = Join-Path $desktop ($app.Name + ".lnk")
             $shortcut = $wsh.CreateShortcut($shortcutPath)
+            
+            # Kể cả máy chưa cài thật, mình vẫn nặn ra cái Shortcut ảo (Fake it)
             if (Test-Path $app.Target) {
               $shortcut.TargetPath = $app.Target
               $shortcut.WorkingDirectory = Split-Path $app.Target -Parent
@@ -200,7 +266,7 @@ jobs:
               $shortcut.WorkingDirectory = "$env:SystemRoot\System32"
               $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,2"
             }
-            $shortcut.Description = "$($app.Name) shortcut for UI workspace simulation"
+            $shortcut.Description = "$($app.Name) Workspace Shortcut"
             $shortcut.Save()
           }
 
