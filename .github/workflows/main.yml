@@ -1,6 +1,6 @@
-name: 🖥️ WINDOWS DOCKURR (FAST noVNC + RANDOM HW PROFILE)
+name: "WINDOWS DOCKURR (FAST noVNC + RANDOM HW PROFILE)"
 
-"on":
+on:
   workflow_dispatch:
 
 permissions:
@@ -13,18 +13,18 @@ jobs:
     timeout-minutes: 360
 
     env:
-      WINDOWS_USERNAME: user
-      WINDOWS_PASSWORD: ngoc0102@
+      WINDOWS_USERNAME: "user"
+      WINDOWS_PASSWORD: "ngoc0102@"
 
     steps:
-      - name: 📦 Prepare workspace and random profiles
+      - name: Prepare workspace and random profiles
         shell: bash
         run: |
           set -Eeuo pipefail
-
           sudo apt-get update > /dev/null 2>&1
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
+          mkdir -p oem
 
           RAM_OPTIONS=("8G" "12G" "16G")
           RANDOM_RAM="${RAM_OPTIONS[$((RANDOM % ${#RAM_OPTIONS[@]}))]}"
@@ -38,91 +38,61 @@ jobs:
           )
           SELECTED_CPU="${CPU_OPTIONS[$((RANDOM % ${#CPU_OPTIONS[@]}))]}"
 
-          mkdir -p oem
-
           {
             echo "RANDOM_RAM=${RANDOM_RAM}"
             echo "SELECTED_CPU=${SELECTED_CPU}"
           } >> "$GITHUB_ENV"
 
-          echo "RAM duoc chon: ${RANDOM_RAM}"
-          echo "CPU duoc chon: ${SELECTED_CPU}"
-
-      - name: 🧩 Generate Windows customization scripts
+      - name: Generate setup-ui.ps1
         shell: bash
         run: |
-          set -Eeuo pipefail
-
           cat > oem/setup-ui.ps1 <<'POWERSHELL'
           $ErrorActionPreference = 'SilentlyContinue'
 
-          Write-Host "==================================================="
-          Write-Host "[UI TEST] DANG KHOI TAO MOI TRUONG WINDOWS"
-          Write-Host "==================================================="
-
-          # [1] Lam sach thong tin OEM
-          Write-Host "[1/7] Dang lam sach thong tin OEM..."
           Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Recurse -Force -ErrorAction SilentlyContinue
 
-          # [2] Mock InstallDate: random tu 6 thang den 2 nam truoc
-          Write-Host "[2/7] Dang mo phong vong doi he dieu hanh (InstallDate)..."
           $now = Get-Date
           $monthsBack = Get-Random -Minimum 6 -Maximum 25
           $randomPast = $now.AddMonths(-$monthsBack).AddDays(-(Get-Random -Minimum 0 -Maximum 28))
           $unixTimestamp = [int][Math]::Floor(([DateTimeOffset]$randomPast).ToUnixTimeSeconds())
           Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name "InstallDate" -Value $unixTimestamp -Type DWord
-          Write-Host ("InstallDate moi: " + $unixTimestamp + " (" + $randomPast.ToString("yyyy-MM-dd HH:mm:ss") + ")")
 
-          # [3] Sinh ComputerName ngau nhien dang DESKTOP-XXXXXX
-          Write-Host "[3/7] Dang sinh hostname ngau nhien..."
           $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.ToCharArray()
           $suffix = -join (1..6 | ForEach-Object { $chars | Get-Random })
           $newName = "DESKTOP-$suffix"
-          Write-Host ("Hostname moi: " + $newName)
           Rename-Computer -NewName $newName -Force
 
-          # [4] Tai wallpaper ngau nhien va set wallpaper bang SystemParametersInfo
-          Write-Host "[4/7] Dang tai va thiet lap wallpaper..."
           $wallpaperDir = "C:\Temp"
           $wallpaperPath = Join-Path $wallpaperDir "wallpaper.jpg"
           New-Item -ItemType Directory -Path $wallpaperDir -Force | Out-Null
-
           try {
             Invoke-WebRequest -Uri "https://picsum.photos/1920/1080" -OutFile $wallpaperPath -UseBasicParsing
-          } catch {
-            Write-Host "Khong tai duoc wallpaper ngau nhien, bo qua."
-          }
+          } catch {}
 
           if (Test-Path $wallpaperPath) {
             Add-Type @"
-            using System;
-            using System.Runtime.InteropServices;
-            public class Wallpaper {
-                [DllImport("user32.dll", SetLastError = true)]
-                public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-            }
+using System;
+using System.Runtime.InteropServices;
+public class Wallpaper {
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+}
 "@
             Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "10"
             Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -Value "0"
             [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
           }
 
-          # [5] Bat/tat Dark Mode ngau nhien
-          Write-Host "[5/7] Dang random che do Light/Dark..."
           $darkMode = Get-Random -Minimum 0 -Maximum 2
           New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Force | Out-Null
           if ($darkMode -eq 1) {
             Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 0 -Type DWord
             Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 0 -Type DWord
-            Write-Host "Da bat Dark Mode."
           } else {
             Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 1 -Type DWord
             Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 1 -Type DWord
-            Write-Host "Dang o Light Mode."
           }
 
-          # [6] Tao workspace gia lap tren Desktop
-          Write-Host "[6/7] Dang tao workspace test tren Desktop..."
           $desktop = [Environment]::GetFolderPath("Desktop")
           $folderPool = @("Work", "Projects", "Personal", "Reports", "Archive")
           $shortcutPool = @(
@@ -143,7 +113,6 @@ jobs:
           foreach ($app in $selectedApps) {
             $shortcutPath = Join-Path $desktop ($app.Name + ".lnk")
             $shortcut = $wsh.CreateShortcut($shortcutPath)
-
             if (Test-Path $app.Target) {
               $shortcut.TargetPath = $app.Target
               $shortcut.WorkingDirectory = Split-Path $app.Target -Parent
@@ -154,13 +123,10 @@ jobs:
               $shortcut.WorkingDirectory = "$env:SystemRoot\System32"
               $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,2"
             }
-
             $shortcut.Description = "$($app.Name) shortcut for UI workspace simulation"
             $shortcut.Save()
           }
 
-          # [7] Tao Startup script mo Settings -> About va Edge tradingradarapp
-          Write-Host "[7/7] Dang tao Startup script mo Settings va trang test..."
           $startupDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
           New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
 
@@ -170,37 +136,27 @@ jobs:
           start "" "ms-settings:about"
           timeout /t 3 /nobreak >nul
           start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=thongkuto&tid=tihon"
-'@
+          '@
 
           Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
-
-          Write-Host "Hoan tat script khoi tao. Chuan bi reboot..."
           POWERSHELL
 
+      - name: Generate install.bat
+        shell: bash
+        run: |
           cat > oem/install.bat <<'BAT'
           @echo off
           setlocal EnableExtensions EnableDelayedExpansion
-
-          echo ===================================================
-          echo [UI TEST] DANG KHOI TAO MOI TRUONG WINDOWS
-          echo ===================================================
-
           powershell -NoProfile -ExecutionPolicy Bypass -File "C:\oem\setup-ui.ps1"
-
-          echo Dang khoi dong lai de ap dung ten may va giao dien moi...
           shutdown /r /t 10
-
           endlocal
           BAT
 
-      - name: 🐳 Generate docker-compose
+      - name: Generate docker-compose
         shell: bash
         run: |
-          set -Eeuo pipefail
-
           cat > docker-compose.yml <<EOF
           version: "3.9"
-
           services:
             windows:
               image: dockurr/windows
@@ -224,45 +180,34 @@ jobs:
                 - ./oem:/oem
           EOF
 
-          echo "===== docker-compose.yml ====="
-          sed -n '1,120p' docker-compose.yml
-
-      - name: 🚀 Boot Windows container
+      - name: Boot Windows
         shell: bash
         run: |
           set -Eeuo pipefail
-
           docker compose up -d > /dev/null 2>&1
-          docker compose ps || true
 
-      - name: 🌐 Start RDP and noVNC tunnels
+      - name: Start tunnels
         shell: bash
         run: |
           set -Eeuo pipefail
-
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
-
           rm -f kami_tunnel.txt kami_tunnel_rdp.log kami_tunnel_web.log
-
           nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
           sleep 5
           nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
 
-      - name: 🖥️ Print RDP and noVNC connection info
+      - name: Print connection info
         shell: bash
         run: |
           set -Eeuo pipefail
-
-          echo "Dang lay IP duong ham..."
-          echo ""
 
           RDP_IP=""
           RDP_RETRY=0
           while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
             if [ -f kami_tunnel.txt ]; then
-              RDP_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | head -1)
+              RDP_CONTENT=$(head -1 kami_tunnel.txt 2>/dev/null || true)
               if [[ "${RDP_CONTENT:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
                 RDP_IP="$RDP_CONTENT"
                 break
@@ -276,7 +221,7 @@ jobs:
           WEB_RETRY=0
           while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
             if [ -f kami_tunnel.txt ]; then
-              WEB_CONTENT=$(cat kami_tunnel.txt 2>/dev/null | tail -1)
+              WEB_CONTENT=$(tail -1 kami_tunnel.txt 2>/dev/null || true)
               if [[ "${WEB_CONTENT:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "${RDP_IP:-}" ]; then
                 WEB_IP="$WEB_CONTENT"
                 break
@@ -287,43 +232,25 @@ jobs:
           done
 
           if [ -z "${RDP_IP:-}" ]; then
-            echo "❌ Khong lay duoc RDP tunnel."
-            echo "===== kami_tunnel_rdp.log ====="
-            tail -n 100 kami_tunnel_rdp.log || true
+            echo "Khong lay duoc RDP tunnel."
             exit 1
           fi
 
-          WEB_STATUS="OK"
           if [ -z "${WEB_IP:-}" ]; then
-            WEB_STATUS="NOT_READY"
             BASE_IP="${RDP_IP%:*}"
             WEB_IP="${BASE_IP}:8006"
           fi
 
-          echo "======================================================================="
-          echo "  ✅ WINDOWS 10 PRO (UI TEST NODE) - DA SAN SANG SU DUNG"
-          echo "======================================================================="
-          echo "  🌐  Ket noi RDP    : ${RDP_IP}"
-          echo "  👤  Tai khoan      : ${WINDOWS_USERNAME}"
-          echo "  🔐  Mat khau       : ${WINDOWS_PASSWORD}"
-          echo "  🧠  CPU Profile    : ${SELECTED_CPU}"
-          echo "  🌍  Xem tren noVNC : http://${WEB_IP}"
-          echo "  📡  Web tunnel     : ${WEB_STATUS}"
-          echo "======================================================================="
-          echo ""
-          echo "Luu y:"
-          echo "- Ban nay uu tien toc do len noVNC nhanh nhu file cu."
-          echo "- Neu noVNC chua kip ra, doi them 10-30 giay roi F5."
-          echo ""
+          echo "RDP  : ${RDP_IP}"
+          echo "WEB  : http://${WEB_IP}"
+          echo "USER : ${WINDOWS_USERNAME}"
+          echo "PASS : ${WINDOWS_PASSWORD}"
+          echo "CPU  : ${SELECTED_CPU}"
 
-      - name: ⏳ Keep runner alive for 6 hours
+      - name: Keep runner alive
         shell: bash
         run: |
-          set -Eeuo pipefail
-
-          echo "Dang duy tri may chu 6 tieng..."
           for i in {1..72}; do
-            ELAPSED=$((i * 5))
-            echo "✅ May chu van song (${ELAPSED} phut / 360 phut)"
+            echo "May chu van song ($((i * 5)) phut / 360 phut)"
             sleep 300
           done
