@@ -162,6 +162,7 @@ jobs:
         run: |
           cat > oem/setup-ui.ps1 <<'POWERSHELL'
           $ErrorActionPreference = 'SilentlyContinue'
+          $desktop = [Environment]::GetFolderPath("Desktop")
 
           Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Recurse -Force -ErrorAction SilentlyContinue
 
@@ -210,7 +211,6 @@ jobs:
             Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 1 -Type DWord
           }
 
-          $desktop = [Environment]::GetFolderPath("Desktop")
           $folderPool = @("Work", "Projects", "Personal", "Reports", "Archive")
           $folderCount = Get-Random -Minimum 2 -Maximum 4
           $selectedFolders = $folderPool | Sort-Object { Get-Random } | Select-Object -First $folderCount
@@ -218,69 +218,125 @@ jobs:
             New-Item -ItemType Directory -Path (Join-Path $desktop $folder) -Force | Out-Null
           }
 
-          # 1. Ứng dụng CỨNG (Lúc nào cũng có mặt trên Desktop)
+          # === TẢI VÀ GÁN ICON ===
+          $iconDir = "C:\Temp\Icons"
+          New-Item -ItemType Directory -Path $iconDir -Force | Out-Null
+
           $fixedApps = @(
-            @{ Name = "Zalo"; Target = "$env:LOCALAPPDATA\Programs\Zalo\Zalo.exe" },
-            @{ Name = "Telegram"; Target = "$env:APPDATA\Telegram Desktop\Telegram.exe" }
+            @{ Name = "Zalo"; Target = "$env:LOCALAPPDATA\Programs\Zalo\Zalo.exe"; IconUrl = "https://raw.githubusercontent.com/abrahamalcaina/windows-icons/master/icons/zalo.ico" },
+            @{ Name = "Telegram"; Target = "$env:APPDATA\Telegram Desktop\Telegram.exe"; IconUrl = "https://raw.githubusercontent.com/abrahamalcaina/windows-icons/master/icons/telegram.ico" }
           )
 
-          # 2. Kho Ứng dụng Động (Random bốc 3-4 cái)
           $appPool = @(
-            @{ Name = "Google Chrome"; Target = "C:\Program Files\Google\Chrome\Application\chrome.exe" },
-            @{ Name = "Spotify"; Target = "$env:APPDATA\Spotify\Spotify.exe" },
-            @{ Name = "Discord"; Target = "$env:LOCALAPPDATA\Discord\Update.exe" },
-            @{ Name = "Steam"; Target = "C:\Program Files (x86)\Steam\steam.exe" },
-            @{ Name = "Visual Studio Code"; Target = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe" },
-            @{ Name = "Unity Hub"; Target = "C:\Program Files\Unity Hub\Unity Hub.exe" },
-            @{ Name = "Python 3.12"; Target = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe" },
-            @{ Name = "OBS Studio"; Target = "C:\Program Files\obs-studio\bin\64bit\obs64.exe" },
-            @{ Name = "CapCut"; Target = "$env:LOCALAPPDATA\CapCut\Apps\CapCut.exe" },
-            @{ Name = "Notion"; Target = "$env:LOCALAPPDATA\Programs\Notion\Notion.exe" },
-            @{ Name = "Epic Games Launcher"; Target = "C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe" },
-            @{ Name = "Postman"; Target = "$env:LOCALAPPDATA\Postman\Postman.exe" },
-            @{ Name = "Excel"; Target = "C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE" },
-            @{ Name = "Word"; Target = "C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE" },
-            @{ Name = "Wireshark"; Target = "C:\Program Files\Wireshark\Wireshark.exe" },
-            @{ Name = "GitHub Desktop"; Target = "$env:LOCALAPPDATA\GitHubDesktop\GitHubDesktop.exe" }
+            @{ Name = "Google Chrome"; Target = "C:\Program Files\Google\Chrome\Application\chrome.exe"; IconUrl = "https://www.google.com/favicon.ico" }
+            @{ Name = "Mozilla Firefox"; Target = "C:\Program Files\Mozilla Firefox\firefox.exe"; IconUrl = "https://www.mozilla.org/favicon.ico" }
+            @{ Name = "Opera GX"; Target = "$env:LOCALAPPDATA\Programs\Opera GX\launcher.exe"; IconUrl = "https://www.opera.com/favicon.ico" }
+            @{ Name = "Brave"; Target = "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"; IconUrl = "https://brave.com/favicon.ico" }
+            @{ Name = "Microsoft Edge"; Target = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"; IconUrl = "https://www.microsoft.com/favicon.ico" }
+            @{ Name = "Discord"; Target = "$env:LOCALAPPDATA\Discord\Update.exe"; IconUrl = "https://discord.com/favicon.ico" }
+            @{ Name = "Skype"; Target = "C:\Program Files (x86)\Microsoft\Skype for Desktop\Skype.exe"; IconUrl = "https://www.skype.com/favicon.ico" }
+            @{ Name = "WhatsApp"; Target = "$env:LOCALAPPDATA\WhatsApp\WhatsApp.exe"; IconUrl = "https://www.whatsapp.com/favicon.ico" }
+            @{ Name = "Viber"; Target = "$env:LOCALAPPDATA\Viber\Viber.exe"; IconUrl = "https://www.viber.com/favicon.ico" }
+            @{ Name = "Slack"; Target = "$env:LOCALAPPDATA\slack\slack.exe"; IconUrl = "https://slack.com/favicon.ico" }
+            @{ Name = "Microsoft Teams"; Target = "$env:LOCALAPPDATA\Microsoft\Teams\current\Teams.exe"; IconUrl = "https://www.microsoft.com/favicon.ico" }
+            @{ Name = "Zoom"; Target = "$env:APPDATA\Zoom\bin\Zoom.exe"; IconUrl = "https://zoom.us/favicon.ico" }
+            @{ Name = "Steam"; Target = "C:\Program Files (x86)\Steam\steam.exe"; IconUrl = "https://store.steampowered.com/favicon.ico" }
+            @{ Name = "Epic Games Launcher"; Target = "C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe"; IconUrl = "https://store.epicgames.com/favicon.ico" }
+            @{ Name = "Battle.net"; Target = "C:\Program Files (x86)\Battle.net\Battle.net.exe"; IconUrl = "https://www.blizzard.com/favicon.ico" }
+            @{ Name = "Riot Client"; Target = "C:\Riot Games\Riot Client\RiotClientServices.exe"; IconUrl = "https://www.riotgames.com/favicon.ico" }
+            @{ Name = "Ubisoft Connect"; Target = "C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\upc.exe"; IconUrl = "https://www.ubisoft.com/favicon.ico" }
+            @{ Name = "EA app"; Target = "C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\EADesktop.exe"; IconUrl = "https://www.ea.com/favicon.ico" }
+            @{ Name = "Visual Studio Code"; Target = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"; IconUrl = "https://code.visualstudio.com/favicon.ico" }
+            @{ Name = "Visual Studio 2022"; Target = "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe"; IconUrl = "https://visualstudio.microsoft.com/favicon.ico" }
+            @{ Name = "IntelliJ IDEA"; Target = "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition\bin\idea64.exe"; IconUrl = "https://www.jetbrains.com/favicon.ico" }
+            @{ Name = "PyCharm"; Target = "C:\Program Files\JetBrains\PyCharm Community Edition\bin\pycharm64.exe"; IconUrl = "https://www.jetbrains.com/favicon.ico" }
+            @{ Name = "Notepad++"; Target = "C:\Program Files\Notepad++\notepad++.exe"; IconUrl = "https://notepad-plus-plus.org/favicon.ico" }
+            @{ Name = "Sublime Text"; Target = "C:\Program Files\Sublime Text\sublime_text.exe"; IconUrl = "https://www.sublimetext.com/favicon.ico" }
+            @{ Name = "Git Bash"; Target = "C:\Program Files\Git\git-bash.exe"; IconUrl = "https://git-scm.com/favicon.ico" }
+            @{ Name = "GitHub Desktop"; Target = "$env:LOCALAPPDATA\GitHubDesktop\GitHubDesktop.exe"; IconUrl = "https://github.com/favicon.ico" }
+            @{ Name = "Postman"; Target = "$env:LOCALAPPDATA\Postman\Postman.exe"; IconUrl = "https://www.postman.com/favicon.ico" }
+            @{ Name = "Docker Desktop"; Target = "C:\Program Files\Docker\Docker\Docker Desktop.exe"; IconUrl = "https://www.docker.com/favicon.ico" }
+            @{ Name = "Python 3.12"; Target = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"; IconUrl = "https://www.python.org/favicon.ico" }
+            @{ Name = "Unity Hub"; Target = "C:\Program Files\Unity Hub\Unity Hub.exe"; IconUrl = "https://unity.com/favicon.ico" }
+            @{ Name = "Android Studio"; Target = "C:\Program Files\Android\Android Studio\bin\studio64.exe"; IconUrl = "https://developer.android.com/favicon.ico" }
+            @{ Name = "Spotify"; Target = "$env:APPDATA\Spotify\Spotify.exe"; IconUrl = "https://open.spotify.com/favicon.ico" }
+            @{ Name = "iTunes"; Target = "C:\Program Files\iTunes\iTunes.exe"; IconUrl = "https://www.apple.com/favicon.ico" }
+            @{ Name = "VLC media player"; Target = "C:\Program Files\VideoLAN\VLC\vlc.exe"; IconUrl = "https://www.videolan.org/favicon.ico" }
+            @{ Name = "OBS Studio"; Target = "C:\Program Files\obs-studio\bin\64bit\obs64.exe"; IconUrl = "https://obsproject.com/favicon.ico" }
+            @{ Name = "CapCut"; Target = "$env:LOCALAPPDATA\CapCut\Apps\CapCut.exe"; IconUrl = "https://www.capcut.com/favicon.ico" }
+            @{ Name = "Adobe Photoshop"; Target = "C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe"; IconUrl = "https://www.adobe.com/favicon.ico" }
+            @{ Name = "Adobe Illustrator"; Target = "C:\Program Files\Adobe\Adobe Illustrator 2023\Support Files\Contents\Windows\Illustrator.exe"; IconUrl = "https://www.adobe.com/favicon.ico" }
+            @{ Name = "Adobe Premiere Pro"; Target = "C:\Program Files\Adobe\Adobe Premiere Pro 2023\Adobe Premiere Pro.exe"; IconUrl = "https://www.adobe.com/favicon.ico" }
+            @{ Name = "Canva"; Target = "$env:LOCALAPPDATA\Programs\Canva\Canva.exe"; IconUrl = "https://www.canva.com/favicon.ico" }
+            @{ Name = "Figma"; Target = "$env:LOCALAPPDATA\Figma\Figma.exe"; IconUrl = "https://www.figma.com/favicon.ico" }
+            @{ Name = "Word"; Target = "C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"; IconUrl = "https://www.microsoft.com/favicon.ico" }
+            @{ Name = "Excel"; Target = "C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE"; IconUrl = "https://www.microsoft.com/favicon.ico" }
+            @{ Name = "PowerPoint"; Target = "C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE"; IconUrl = "https://www.microsoft.com/favicon.ico" }
+            @{ Name = "Outlook"; Target = "C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE"; IconUrl = "https://outlook.live.com/favicon.ico" }
+            @{ Name = "Notion"; Target = "$env:LOCALAPPDATA\Programs\Notion\Notion.exe"; IconUrl = "https://www.notion.so/favicon.ico" }
+            @{ Name = "Evernote"; Target = "$env:LOCALAPPDATA\Programs\Evernote\Evernote.exe"; IconUrl = "https://evernote.com/favicon.ico" }
+            @{ Name = "Foxit PDF Reader"; Target = "C:\Program Files (x86)\Foxit Software\Foxit PDF Reader\FoxitPDFReader.exe"; IconUrl = "https://www.foxit.com/favicon.ico" }
+            @{ Name = "Adobe Acrobat"; Target = "C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe"; IconUrl = "https://www.adobe.com/favicon.ico" }
+            @{ Name = "OneDrive"; Target = "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe"; IconUrl = "https://www.microsoft.com/favicon.ico" }
+            @{ Name = "Google Drive"; Target = "C:\Program Files\Google\Drive File Stream\GoogleDriveFS.exe"; IconUrl = "https://drive.google.com/favicon.ico" }
+            @{ Name = "7-Zip"; Target = "C:\Program Files\7-Zip\7zFM.exe"; IconUrl = "https://www.7-zip.org/favicon.ico" }
+            @{ Name = "WinRAR"; Target = "C:\Program Files\WinRAR\WinRAR.exe"; IconUrl = "https://www.win-rar.com/favicon.ico" }
+            @{ Name = "CCleaner"; Target = "C:\Program Files\CCleaner\CCleaner64.exe"; IconUrl = "https://www.ccleaner.com/favicon.ico" }
+            @{ Name = "TeamViewer"; Target = "C:\Program Files\TeamViewer\TeamViewer.exe"; IconUrl = "https://www.teamviewer.com/favicon.ico" }
+            @{ Name = "AnyDesk"; Target = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"; IconUrl = "https://anydesk.com/favicon.ico" }
+            @{ Name = "MSI Afterburner"; Target = "C:\Program Files (x86)\MSI Afterburner\MSIAfterburner.exe"; IconUrl = "https://www.msi.com/favicon.ico" }
+            @{ Name = "qBittorrent"; Target = "C:\Program Files\qBittorrent\qbittorrent.exe"; IconUrl = "https://www.qbittorrent.org/favicon.ico" }
+            @{ Name = "Wireshark"; Target = "C:\Program Files\Wireshark\Wireshark.exe"; IconUrl = "https://www.wireshark.org/favicon.ico" }
+            @{ Name = "VirtualBox"; Target = "C:\Program Files\Oracle\VirtualBox\VirtualBox.exe"; IconUrl = "https://www.virtualbox.org/favicon.ico" }
           )
 
-          # Trộn kho và bốc ngẫu nhiên từ 3 đến 5 app
-          $randomApps = $appPool | Sort-Object { Get-Random } | Select-Object -First (Get-Random -Minimum 3 -Maximum 5)
-          
-          # Gộp Zalo, Telegram với mấy app vừa bốc
+          $randomApps = $appPool | Sort-Object { Get-Random } | Select-Object -First (Get-Random -Minimum 5 -Maximum 10)
           $allApps = $fixedApps + $randomApps
-
           $wsh = New-Object -ComObject WScript.Shell
+
           foreach ($app in $allApps) {
             $shortcutPath = Join-Path $desktop ($app.Name + ".lnk")
             $shortcut = $wsh.CreateShortcut($shortcutPath)
             
-            # Kể cả máy chưa cài thật, mình vẫn nặn ra cái Shortcut ảo (Fake it)
+            $safeIconName = $app.Name -replace '[^a-zA-Z0-9]', ''
+            $localIconPath = Join-Path $iconDir ($safeIconName + ".ico")
+            
+            try {
+              if (-not (Test-Path $localIconPath)) {
+                Invoke-WebRequest -Uri $app.IconUrl -OutFile $localIconPath -UseBasicParsing -TimeoutSec 3
+              }
+            } catch {}
+
             if (Test-Path $app.Target) {
               $shortcut.TargetPath = $app.Target
               $shortcut.WorkingDirectory = Split-Path $app.Target -Parent
-              $shortcut.IconLocation = $app.Target
             } else {
               $shortcut.TargetPath = "$env:SystemRoot\System32\cmd.exe"
               $shortcut.Arguments = "/c exit"
               $shortcut.WorkingDirectory = "$env:SystemRoot\System32"
-              $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,2"
             }
-            $shortcut.Description = "$($app.Name) Workspace Shortcut"
+
+            if (Test-Path $localIconPath) {
+               $shortcut.IconLocation = $localIconPath
+            } else {
+               $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,2"
+            }
+            
+            $shortcut.Description = "$($app.Name) Workspace"
             $shortcut.Save()
           }
 
-          $startupDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Startup"
+          $startupDir = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
           New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
-
+          
           $startupCmd = @(
             '@echo off'
-            'timeout /t 8 /nobreak >nul'
-            'start "" "ms-settings:about"'
+            'timeout /t 5 /nobreak >nul'
+            'start "" "dxdiag"'
             'timeout /t 3 /nobreak >nul'
             'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=urgot&tid=tihon"'
           ) -join [Environment]::NewLine
-
+          
           Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
           POWERSHELL
 
