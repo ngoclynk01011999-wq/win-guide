@@ -260,7 +260,7 @@ jobs:
           tail -n 50 kami_tunnel_3389.log || true
           tail -n 50 kami_tunnel_8006.log || true
 
-            - name: 🌐 LAY THONG TIN KET NOI RDP
+      - name: 🌐 LAY THONG TIN KET NOI RDP
         shell: bash
         run: |
           set -Eeuo pipefail
@@ -321,6 +321,7 @@ jobs:
           echo "  🌐  Ket noi RDP    : ${RDP_IP}"
           echo "  👤  Tai khoan      : user"
           echo "  🔐  Mat khau       : ngoc0102@"
+          echo "  🧠  CPU Profile    : ${SELECTED_CPU}"
           echo "  🌍  Xem tren Web   : http://${WEB_IP}"
           echo "  📡  Web tunnel     : ${WEB_STATUS}"
           echo "======================================================================="
