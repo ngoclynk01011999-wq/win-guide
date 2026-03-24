@@ -68,16 +68,18 @@ jobs:
           try {
             Invoke-WebRequest -Uri "https://picsum.photos/1920/1080" -OutFile $wallpaperPath -UseBasicParsing
           } catch {}
-
           if (Test-Path $wallpaperPath) {
-            Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class Wallpaper {
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
-}
-"@
+            $code = @(
+              'using System;'
+              'using System.Runtime.InteropServices;'
+              'public class Wallpaper {'
+              '    [DllImport("user32.dll", SetLastError = true)]'
+              '    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);'
+              '}'
+            ) -join [Environment]::NewLine
+
+            Add-Type -TypeDefinition $code
+
             Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "10"
             Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -Value "0"
             [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
