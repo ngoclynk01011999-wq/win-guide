@@ -102,7 +102,6 @@ jobs:
                 public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
             }
 "@
-
             Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "10"
             Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -Value "0"
             [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
