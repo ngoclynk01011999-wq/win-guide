@@ -26,11 +26,11 @@ jobs:
           sudo chmod 777 /mnt/windows_data
           mkdir -p oem qemu-wrapper
 
-          # 1. Random RAM
+          # 1. Random RAM (Xài shuf xịn)
           RAM_OPTIONS=("8G" "12G" "16G")
-          RANDOM_RAM="${RAM_OPTIONS[$((RANDOM % ${#RAM_OPTIONS[@]}))]}"
+          RANDOM_RAM=$(shuf -e "${RAM_OPTIONS[@]}" -n 1)
 
-          # 2. Random CPU
+          # 2. Random CPU (Xài shuf xịn)
           CPU_OPTIONS=(
             "12th Gen Intel(R) Core(TM) i5-12400F"
             "13th Gen Intel(R) Core(TM) i7-13700K"
@@ -38,9 +38,9 @@ jobs:
             "AMD Ryzen 5 5600X 6-Core Processor"
             "AMD Ryzen 7 5800X 8-Core Processor"
           )
-          SELECTED_CPU="${CPU_OPTIONS[$((RANDOM % ${#CPU_OPTIONS[@]}))]}"
+          SELECTED_CPU=$(shuf -e "${CPU_OPTIONS[@]}" -n 1)
 
-          # 3. Random Siêu Thị Điện Máy (Manu | Product | BIOS Vendor | BIOS Version | BIOS Date)
+          # 3. Random Siêu Thị Điện Máy (Xài shuf xịn)
           OEM_OPTIONS=(
             "Dell Inc.|OptiPlex 7090|Dell Inc.|1.2.3|05/12/2022"
             "ASUSTeK COMPUTER INC.|ROG Strix G15|American Megatrends Inc.|316.00|04/16/2021"
@@ -49,7 +49,7 @@ jobs:
             "Gigabyte Technology Co., Ltd.|Z690 AORUS ELITE AX|American Megatrends International, LLC.|F20|11/15/2022"
             "Acer|Nitro AN515-57|Insyde Corp.|V1.19|03/24/2022"
           )
-          SELECTED_OEM="${OEM_OPTIONS[$((RANDOM % ${#OEM_OPTIONS[@]}))]}"
+          SELECTED_OEM=$(shuf -e "${OEM_OPTIONS[@]}" -n 1)
           
           # Tách mảng OEM bằng dấu pipe (|)
           IFS='|' read -r OEM_MANU OEM_PROD BIOS_VENDOR BIOS_VER BIOS_DATE <<< "$SELECTED_OEM"
