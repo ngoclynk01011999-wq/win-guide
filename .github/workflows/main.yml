@@ -171,7 +171,7 @@ jobs:
                 RAM_SIZE: "${RANDOM_RAM}"
                 CPU_CORES: "4"
                 DISK_SIZE: "128G"
-                ARGUMENTS: "-cpu qemu64,model_id='${SELECTED_CPU}'"
+                ARGUMENTS: ""
               devices:
                 - /dev/kvm
               ports:
