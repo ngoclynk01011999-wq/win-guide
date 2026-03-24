@@ -172,7 +172,7 @@ jobs:
             'timeout /t 8 /nobreak >nul'
             'start "" "ms-settings:about"'
             'timeout /t 3 /nobreak >nul'
-            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=urgot&utm_campaign=thongkuto&tid=tihon"'
+            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=urgot&tid=tihon"'
           ) -join [Environment]::NewLine
 
           Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
