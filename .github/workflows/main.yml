@@ -26,100 +26,97 @@ jobs:
           sudo chmod 777 /mnt/windows_data
           mkdir -p oem qemu-wrapper
 
-          # 1. Random RAM (Xài shuf xịn)
+          # 1. Random RAM
           RAM_OPTIONS=("8G" "12G" "16G")
           RANDOM_RAM=$(shuf -e "${RAM_OPTIONS[@]}" -n 1)
-          
-          # TRỊ BỆNH KẸT XUNG NHỊP 2.4GHz (Random từ 2.8GHz đến 5.2GHz)
-          RANDOM_MHZ=$(shuf -i 2800-5200 -n 1)
 
-          # 2. Kho 60 Cấu Hình Real 100% (Khóa chết Combo)
+          # 2. Kho 60 Cấu Hình Real 100% (ĐÃ ĐỐI CHIẾU DATASHEET INTEL/AMD CHO BASE CLOCK)
           HW_PROFILES=(
             # =========================
             # BUSINESS / OFFICE
             # =========================
-            "Intel(R) Core(TM) i5-10500 CPU @ 3.10GHz|HP|HP ProDesk 400 G7|HPQOEM|S01 Ver. 02.13.00|08/01/2023"
-            "Intel(R) Core(TM) i5-12500|Dell Inc.|OptiPlex 7000 Small Form Factor|Dell Inc.|1.9.1|08/29/2023"
-            "Intel(R) Core(TM) i7-12700|Dell Inc.|OptiPlex 7000 Tower|Dell Inc.|1.10.2|10/17/2023"
-            "Intel(R) Core(TM) i5-13500|Dell Inc.|OptiPlex 7010 Tower|Dell Inc.|1.3.0|09/26/2023"
-            "Intel(R) Core(TM) i7-1260P|Dell Inc.|Latitude 7430|Dell Inc.|1.19.0|09/20/2023"
-            "Intel(R) Core(TM) i5-1245U|Dell Inc.|Latitude 5430|Dell Inc.|1.18.0|07/27/2023"
-            "Intel(R) Core(TM) i5-1335U|Dell Inc.|Latitude 5440|Dell Inc.|1.7.0|10/24/2023"
-            "Intel(R) Core(TM) i7-1365U|Dell Inc.|Latitude 7440|Dell Inc.|1.6.0|11/09/2023"
-            "Intel(R) Core(TM) i7-1185G7|HP|HP EliteBook 840 G8 Notebook PC|HPQOEM|T70 Ver. 01.09.01|06/14/2022"
-            "Intel(R) Core(TM) i5-1240P|HP|HP ProBook 440 14 inch G9 Notebook PC|HPQOEM|U85 Ver. 01.07.00|11/15/2022"
-            "Intel(R) Core(TM) i7-1265U|HP|HP EliteBook 840 G9 Notebook PC|HP|U78 Ver. 01.08.00|09/12/2023"
-            "Intel(R) Core(TM) i5-1235U|HP|HP EliteBook 640 G9 Notebook PC|HP|U79 Ver. 01.10.00|10/04/2023"
-            "Intel(R) Core(TM) i5-12500|LENOVO|ThinkCentre M70t Gen 3|LENOVO|M46KT38A|09/19/2023"
-            "Intel(R) Core(TM) i7-12700|LENOVO|ThinkCentre M90t Gen 3|LENOVO|M2AKT53A|08/16/2023"
-            "Intel(R) Core(TM) i7-1260P|LENOVO|ThinkPad T14 Gen 3|LENOVO|N3MET08W (1.05)|08/16/2022"
-            "Intel(R) Core(TM) i5-1235U|LENOVO|ThinkBook 14 G4 IAP|LENOVO|J7CN40WW|09/02/2022"
-            "Intel(R) Core(TM) i7-1255U|LENOVO|ThinkPad E14 Gen 4|LENOVO|R1BET72W|10/10/2023"
-            "Intel(R) Core(TM) i7-1265U|LENOVO|ThinkPad X1 Carbon Gen 10|LENOVO|N3XET82W|11/15/2023"
-            "Intel(R) Core(TM) i7-1260P|ASUSTeK COMPUTER INC.|ExpertBook B5 B5402CBA|American Megatrends International, LLC.|311|10/07/2022"
-            "Intel(R) Core(TM) i5-1235U|ASUSTeK COMPUTER INC.|ExpertBook B1 B1402CBA|American Megatrends International, LLC.|303|08/18/2023"
-            "Intel(R) Core(TM) i7-1360P|ASUSTeK COMPUTER INC.|ExpertBook B9 B9403CVA|American Megatrends International, LLC.|302|07/11/2023"
-            "Intel(R) Core(TM) i7-1185G7|Acer|TravelMate P4 TMP414-52|Insyde Corp.|V1.07|09/06/2022"
-            "Intel(R) Core(TM) i5-1235U|Acer|TravelMate P2 TMP214-54|Insyde Corp.|V1.15|06/21/2023"
-            "Intel(R) Core(TM) i7-1185G7|Microsoft Corporation|Surface Laptop 4|Microsoft Corporation|18.102.143|08/25/2022"
+            "Intel(R) Core(TM) i5-10500 CPU @ 3.10GHz|HP|HP ProDesk 400 G7|HPQOEM|S01 Ver. 02.13.00|08/01/2023|3100"
+            "Intel(R) Core(TM) i5-12500|Dell Inc.|OptiPlex 7000 Small Form Factor|Dell Inc.|1.9.1|08/29/2023|3000"
+            "Intel(R) Core(TM) i7-12700|Dell Inc.|OptiPlex 7000 Tower|Dell Inc.|1.10.2|10/17/2023|2100"
+            "Intel(R) Core(TM) i5-13500|Dell Inc.|OptiPlex 7010 Tower|Dell Inc.|1.3.0|09/26/2023|2500"
+            "Intel(R) Core(TM) i7-1260P|Dell Inc.|Latitude 7430|Dell Inc.|1.19.0|09/20/2023|2100"
+            "Intel(R) Core(TM) i5-1245U|Dell Inc.|Latitude 5430|Dell Inc.|1.18.0|07/27/2023|1600"
+            "Intel(R) Core(TM) i5-1335U|Dell Inc.|Latitude 5440|Dell Inc.|1.7.0|10/24/2023|1300"
+            "Intel(R) Core(TM) i7-1365U|Dell Inc.|Latitude 7440|Dell Inc.|1.6.0|11/09/2023|1800"
+            "Intel(R) Core(TM) i7-1185G7|HP|HP EliteBook 840 G8 Notebook PC|HPQOEM|T70 Ver. 01.09.01|06/14/2022|3000"
+            "Intel(R) Core(TM) i5-1240P|HP|HP ProBook 440 14 inch G9 Notebook PC|HPQOEM|U85 Ver. 01.07.00|11/15/2022|1700"
+            "Intel(R) Core(TM) i7-1265U|HP|HP EliteBook 840 G9 Notebook PC|HP|U78 Ver. 01.08.00|09/12/2023|1800"
+            "Intel(R) Core(TM) i5-1235U|HP|HP EliteBook 640 G9 Notebook PC|HP|U79 Ver. 01.10.00|10/04/2023|1300"
+            "Intel(R) Core(TM) i5-12500|LENOVO|ThinkCentre M70t Gen 3|LENOVO|M46KT38A|09/19/2023|3000"
+            "Intel(R) Core(TM) i7-12700|LENOVO|ThinkCentre M90t Gen 3|LENOVO|M2AKT53A|08/16/2023|2100"
+            "Intel(R) Core(TM) i7-1260P|LENOVO|ThinkPad T14 Gen 3|LENOVO|N3MET08W (1.05)|08/16/2022|2100"
+            "Intel(R) Core(TM) i5-1235U|LENOVO|ThinkBook 14 G4 IAP|LENOVO|J7CN40WW|09/02/2022|1300"
+            "Intel(R) Core(TM) i7-1255U|LENOVO|ThinkPad E14 Gen 4|LENOVO|R1BET72W|10/10/2023|1700"
+            "Intel(R) Core(TM) i7-1265U|LENOVO|ThinkPad X1 Carbon Gen 10|LENOVO|N3XET82W|11/15/2023|1800"
+            "Intel(R) Core(TM) i7-1260P|ASUSTeK COMPUTER INC.|ExpertBook B5 B5402CBA|American Megatrends International, LLC.|311|10/07/2022|2100"
+            "Intel(R) Core(TM) i5-1235U|ASUSTeK COMPUTER INC.|ExpertBook B1 B1402CBA|American Megatrends International, LLC.|303|08/18/2023|1300"
+            "Intel(R) Core(TM) i7-1360P|ASUSTeK COMPUTER INC.|ExpertBook B9 B9403CVA|American Megatrends International, LLC.|302|07/11/2023|2200"
+            "Intel(R) Core(TM) i7-1185G7|Acer|TravelMate P4 TMP414-52|Insyde Corp.|V1.07|09/06/2022|3000"
+            "Intel(R) Core(TM) i5-1235U|Acer|TravelMate P2 TMP214-54|Insyde Corp.|V1.15|06/21/2023|1300"
+            "Intel(R) Core(TM) i7-1185G7|Microsoft Corporation|Surface Laptop 4|Microsoft Corporation|18.102.143|08/25/2022|3000"
 
             # =========================
             # GAMING
             # =========================
-            "AMD Ryzen 7 6800H with Radeon Graphics|ASUSTeK COMPUTER INC.|ROG Strix G15 G513RM|American Megatrends International, LLC.|315|04/16/2022"
-            "AMD Ryzen 9 6900HX with Radeon Graphics|ASUSTeK COMPUTER INC.|ROG Strix Scar 15 G533ZS|American Megatrends International, LLC.|313|07/28/2022"
-            "Intel(R) Core(TM) i5-11400H|ASUSTeK COMPUTER INC.|ASUS TUF Gaming F15 FX506HC|American Megatrends International, LLC.|311|11/05/2022"
-            "Intel(R) Core(TM) i7-12700H|ASUSTeK COMPUTER INC.|TUF Gaming F15 FX507ZM|American Megatrends International, LLC.|315|09/14/2022"
-            "AMD Ryzen 7 7735HS with Radeon Graphics|ASUSTeK COMPUTER INC.|TUF Gaming A15 FA507NV|American Megatrends International, LLC.|307|08/25/2023"
-            "AMD Ryzen 5 5600H with Radeon Graphics|LENOVO|Legion 5 15ACH6|LENOVO|GKCN53WW|05/09/2022"
-            "Intel(R) Core(TM) i7-12700H|LENOVO|Legion 5i Pro 16IAH7H|LENOVO|J2CN40WW|10/20/2022"
-            "AMD Ryzen 7 6800H with Radeon Graphics|LENOVO|Legion 7 16ARHA7|LENOVO|K9CN38WW|08/17/2022"
-            "Intel(R) Core(TM) i7-12700H|Micro-Star International Co., Ltd.|Katana GF66 12UC|American Megatrends International, LLC.|E1584IMS.10A|06/15/2022"
-            "Intel(R) Core(TM) i7-12650H|Micro-Star International Co., Ltd.|Thin GF63 12VE|American Megatrends International, LLC.|E16R8IMS.10B|09/22/2023"
-            "Intel(R) Core(TM) i7-1280P|Micro-Star International Co., Ltd.|Stealth 14 Studio A13VF|American Megatrends International, LLC.|E14K1IMS.108|07/19/2023"
-            "Intel(R) Core(TM) i5-11400H|Acer|Nitro AN515-57|Insyde Corp.|V1.19|03/24/2022"
-            "AMD Ryzen 7 5800H with Radeon Graphics|Acer|Nitro AN515-45|Insyde Corp.|V1.10|05/06/2021"
-            "Intel(R) Core(TM) i7-12700H|Acer|Predator Helios 300 PH315-55|Insyde Corp.|V1.12|07/21/2022"
-            "AMD Ryzen 9 6900HX with Radeon Graphics|Acer|Predator Helios 300 PH315-55s|Insyde Corp.|V1.05|11/14/2022"
-            "Intel(R) Core(TM) i7-12700H|GIGABYTE|AORUS 15 XE4|American Megatrends International, LLC.|FB05|04/10/2022"
-            "Intel(R) Core(TM) i7-13700H|GIGABYTE|G5 KF|American Megatrends International, LLC.|FB09|08/03/2023"
-            "Intel(R) Core(TM) i7-12800H|Razer|Blade 15 Advanced Model (Early 2022)|Razer|2.06|01/02/2024"
-            "Intel(R) Core(TM) i7-13800H|Razer|Blade 16 (2023)|Razer|1.05|06/08/2023"
-            "Intel(R) Core(TM) i7-12700H|HP|OMEN by HP Laptop 16-b1xxx|AMI|F.20|10/21/2022"
-            "AMD Ryzen 7 7840HS with Radeon 780M Graphics|HP|Victus Gaming Laptop 15-fb2xxx|AMI|F.08|09/14/2023"
+            "AMD Ryzen 7 6800H with Radeon Graphics|ASUSTeK COMPUTER INC.|ROG Strix G15 G513RM|American Megatrends International, LLC.|315|04/16/2022|3200"
+            "AMD Ryzen 9 6900HX with Radeon Graphics|ASUSTeK COMPUTER INC.|ROG Strix Scar 15 G533ZS|American Megatrends International, LLC.|313|07/28/2022|3300"
+            "Intel(R) Core(TM) i5-11400H|ASUSTeK COMPUTER INC.|ASUS TUF Gaming F15 FX506HC|American Megatrends International, LLC.|311|11/05/2022|2700"
+            "Intel(R) Core(TM) i7-12700H|ASUSTeK COMPUTER INC.|TUF Gaming F15 FX507ZM|American Megatrends International, LLC.|315|09/14/2022|2300"
+            "AMD Ryzen 7 7735HS with Radeon Graphics|ASUSTeK COMPUTER INC.|TUF Gaming A15 FA507NV|American Megatrends International, LLC.|307|08/25/2023|3200"
+            "AMD Ryzen 5 5600H with Radeon Graphics|LENOVO|Legion 5 15ACH6|LENOVO|GKCN53WW|05/09/2022|3300"
+            "Intel(R) Core(TM) i7-12700H|LENOVO|Legion 5i Pro 16IAH7H|LENOVO|J2CN40WW|10/20/2022|2300"
+            "AMD Ryzen 7 6800H with Radeon Graphics|LENOVO|Legion 7 16ARHA7|LENOVO|K9CN38WW|08/17/2022|3200"
+            "Intel(R) Core(TM) i7-12700H|Micro-Star International Co., Ltd.|Katana GF66 12UC|American Megatrends International, LLC.|E1584IMS.10A|06/15/2022|2300"
+            "Intel(R) Core(TM) i7-12650H|Micro-Star International Co., Ltd.|Thin GF63 12VE|American Megatrends International, LLC.|E16R8IMS.10B|09/22/2023|2300"
+            "Intel(R) Core(TM) i7-1280P|Micro-Star International Co., Ltd.|Stealth 14 Studio A13VF|American Megatrends International, LLC.|E14K1IMS.108|07/19/2023|1800"
+            "Intel(R) Core(TM) i5-11400H|Acer|Nitro AN515-57|Insyde Corp.|V1.19|03/24/2022|2700"
+            "AMD Ryzen 7 5800H with Radeon Graphics|Acer|Nitro AN515-45|Insyde Corp.|V1.10|05/06/2021|3200"
+            "Intel(R) Core(TM) i7-12700H|Acer|Predator Helios 300 PH315-55|Insyde Corp.|V1.12|07/21/2022|2300"
+            "AMD Ryzen 9 6900HX with Radeon Graphics|Acer|Predator Helios 300 PH315-55s|Insyde Corp.|V1.05|11/14/2022|3300"
+            "Intel(R) Core(TM) i7-12700H|GIGABYTE|AORUS 15 XE4|American Megatrends International, LLC.|FB05|04/10/2022|2300"
+            "Intel(R) Core(TM) i7-13700H|GIGABYTE|G5 KF|American Megatrends International, LLC.|FB09|08/03/2023|2400"
+            "Intel(R) Core(TM) i7-12800H|Razer|Blade 15 Advanced Model (Early 2022)|Razer|2.06|01/02/2024|2400"
+            "Intel(R) Core(TM) i7-13800H|Razer|Blade 16 (2023)|Razer|1.05|06/08/2023|2500"
+            "Intel(R) Core(TM) i7-12700H|HP|OMEN by HP Laptop 16-b1xxx|AMI|F.20|10/21/2022|2300"
+            "AMD Ryzen 7 7840HS with Radeon 780M Graphics|HP|Victus Gaming Laptop 15-fb2xxx|AMI|F.08|09/14/2023|3800"
 
             # =========================
             # WORKSTATION / CREATOR
             # =========================
-            "Intel(R) Core(TM) i7-12700|Dell Inc.|Precision 3660 Tower|Dell Inc.|1.13.0|10/17/2023"
-            "Intel(R) Core(TM) i7-12700H|Dell Inc.|Precision 5570|Dell Inc.|1.14.0|11/01/2023"
-            "Intel(R) Core(TM) i9-12900K|Dell Inc.|Precision 7865 Tower|Dell Inc.|1.8.0|09/05/2023"
-            "Intel(R) Core(TM) i7-13700|Dell Inc.|Precision 3460 Small Form Factor|Dell Inc.|1.5.0|12/12/2023"
-            "Intel(R) Core(TM) i7-12700H|HP|HP ZBook Power 15.6 inch G9 Mobile Workstation PC|HP|N78 Ver. 01.08.00|07/12/2023"
-            "Intel(R) Core(TM) i7-12700|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.08.01|07/12/2023"
-            "Intel(R) Core(TM) i9-13900K|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.11.00|11/08/2023"
-            "Intel(R) Core(TM) i7-13800H|HP|HP ZBook Studio 16 inch G10 Mobile Workstation PC|HP|W71 Ver. 01.03.00|09/19/2023"
-            "Intel(R) Core(TM) i7-12700H|LENOVO|ThinkPad P1 Gen 5|LENOVO|N3FET33W (1.15)|11/10/2022"
-            "Intel(R) Core(TM) i7-12800HX|LENOVO|ThinkPad P16 Gen 1|LENOVO|N3EET47W|08/23/2023"
-            "Intel(R) Core(TM) i9-12900HX|LENOVO|ThinkStation P360 Ultra|LENOVO|M70KT35A|07/27/2023"
-            "Intel(R) Core(TM) i7-12700H|ASUSTeK COMPUTER INC.|Zenbook Pro 14 Duo OLED UX8402ZE|American Megatrends International, LLC.|307|09/29/2022"
-            "Intel(R) Core(TM) i9-13980HX|ASUSTeK COMPUTER INC.|ProArt Studiobook 16 OLED H7604JI|American Megatrends International, LLC.|302|08/30/2023"
-            "Intel(R) Core(TM) i9-13900K|ASUSTeK COMPUTER INC.|ROG Maximus Z790 HERO|American Megatrends International, LLC.|0802|12/23/2022"
-            "Intel(R) Core(TM) i7-12700KF|Micro-Star International Co., Ltd.|Creator P100X 12V|American Megatrends International, LLC.|A.30|08/18/2022"
-            "Intel(R) Core(TM) i9-13900HX|Micro-Star International Co., Ltd.|Creator Z17 HX Studio A13V|American Megatrends International, LLC.|E17N3IMS.106|09/05/2023"
-            "Intel(R) Core(TM) i5-13600K|Gigabyte Technology Co., Ltd.|Z790 AORUS ELITE AX|American Megatrends International, LLC.|F3|11/15/2022"
-            "Intel(R) Core(TM) i7-13700K|Gigabyte Technology Co., Ltd.|B760 AORUS ELITE AX|American Megatrends International, LLC.|F6|06/26/2023"
-            "Intel(R) Core(TM) i9-13980HX|Razer|Blade 18 (2023)|Razer|1.04|07/27/2023"
+            "Intel(R) Core(TM) i7-12700|Dell Inc.|Precision 3660 Tower|Dell Inc.|1.13.0|10/17/2023|2100"
+            "Intel(R) Core(TM) i7-12700H|Dell Inc.|Precision 5570|Dell Inc.|1.14.0|11/01/2023|2300"
+            "Intel(R) Core(TM) i9-12900K|Dell Inc.|Precision 7865 Tower|Dell Inc.|1.8.0|09/05/2023|3200"
+            "Intel(R) Core(TM) i7-13700|Dell Inc.|Precision 3460 Small Form Factor|Dell Inc.|1.5.0|12/12/2023|2100"
+            "Intel(R) Core(TM) i7-12700H|HP|HP ZBook Power 15.6 inch G9 Mobile Workstation PC|HP|N78 Ver. 01.08.00|07/12/2023|2300"
+            "Intel(R) Core(TM) i7-12700|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.08.01|07/12/2023|2100"
+            "Intel(R) Core(TM) i9-13900K|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.11.00|11/08/2023|3000"
+            "Intel(R) Core(TM) i7-13800H|HP|HP ZBook Studio 16 inch G10 Mobile Workstation PC|HP|W71 Ver. 01.03.00|09/19/2023|2500"
+            "Intel(R) Core(TM) i7-12700H|LENOVO|ThinkPad P1 Gen 5|LENOVO|N3FET33W (1.15)|11/10/2022|2300"
+            "Intel(R) Core(TM) i7-12800HX|LENOVO|ThinkPad P16 Gen 1|LENOVO|N3EET47W|08/23/2023|2000"
+            "Intel(R) Core(TM) i9-12900HX|LENOVO|ThinkStation P360 Ultra|LENOVO|M70KT35A|07/27/2023|2300"
+            "Intel(R) Core(TM) i7-12700H|ASUSTeK COMPUTER INC.|Zenbook Pro 14 Duo OLED UX8402ZE|American Megatrends International, LLC.|307|09/29/2022|2300"
+            "Intel(R) Core(TM) i9-13980HX|ASUSTeK COMPUTER INC.|ProArt Studiobook 16 OLED H7604JI|American Megatrends International, LLC.|302|08/30/2023|2200"
+            "Intel(R) Core(TM) i9-13900K|ASUSTeK COMPUTER INC.|ROG Maximus Z790 HERO|American Megatrends International, LLC.|0802|12/23/2022|3000"
+            "Intel(R) Core(TM) i7-12700KF|Micro-Star International Co., Ltd.|Creator P100X 12V|American Megatrends International, LLC.|A.30|08/18/2022|3600"
+            "Intel(R) Core(TM) i9-13900HX|Micro-Star International Co., Ltd.|Creator Z17 HX Studio A13V|American Megatrends International, LLC.|E17N3IMS.106|09/05/2023|2200"
+            "Intel(R) Core(TM) i5-13600K|Gigabyte Technology Co., Ltd.|Z790 AORUS ELITE AX|American Megatrends International, LLC.|F3|11/15/2022|3500"
+            "Intel(R) Core(TM) i7-13700K|Gigabyte Technology Co., Ltd.|B760 AORUS ELITE AX|American Megatrends International, LLC.|F6|06/26/2023|3400"
+            "Intel(R) Core(TM) i9-13980HX|Razer|Blade 18 (2023)|Razer|1.04|07/27/2023|2200"
           )
           SELECTED_PROFILE=$(shuf -e "${HW_PROFILES[@]}" -n 1)
           
-          # Tách mảng PROFILE bằng dấu pipe (|)
-          IFS='|' read -r SELECTED_CPU OEM_MANU OEM_PROD BIOS_VENDOR BIOS_VER BIOS_DATE <<< "$SELECTED_PROFILE"
+          # Tách mảng PROFILE và HỨNG THÊM BIẾN BASE_MHZ
+          IFS='|' read -r SELECTED_CPU OEM_MANU OEM_PROD BIOS_VENDOR BIOS_VER BIOS_DATE BASE_MHZ <<< "$SELECTED_PROFILE"
 
           # Xuất tất cả ra biến môi trường
           {
             echo "RANDOM_RAM=${RANDOM_RAM}"
-            echo "RANDOM_MHZ=${RANDOM_MHZ}"
+            echo "BASE_MHZ=${BASE_MHZ}"
             echo "SELECTED_CPU=${SELECTED_CPU}"
             echo "OEM_MANU=${OEM_MANU}"
             echo "OEM_PROD=${OEM_PROD}"
@@ -156,7 +153,7 @@ jobs:
             "\${filtered_args[@]}" \\
             -smbios "type=0,vendor=${BIOS_VENDOR},version=${BIOS_VER},date=${BIOS_DATE}" \\
             -smbios "type=1,manufacturer=${OEM_MANU},product=${OEM_PROD}" \\
-            -smbios "type=4,max-speed=${RANDOM_MHZ},current-speed=${RANDOM_MHZ}" \\
+            -smbios "type=4,max-speed=${BASE_MHZ},current-speed=${BASE_MHZ}" \\
             -cpu "qemu64,model_id=${SELECTED_CPU}"
           EOF
 
@@ -463,7 +460,7 @@ jobs:
           echo "🌐 DÙNG CHO TRÌNH DUYỆT (WEB)  : http://${WEB_IP}"
           echo "👤 USERNAME                    : ${WINDOWS_USERNAME}"
           echo "🔑 PASSWORD                    : ${WINDOWS_PASSWORD}"
-          echo "⚙️ CPU                        : ${SELECTED_CPU} (Đã Fix Base Clock)"
+          echo "⚙️ CPU                        : ${SELECTED_CPU} (Base Clock: ${BASE_MHZ} MHz)"
           echo "====================================================="
 
       - name: Keep runner alive
