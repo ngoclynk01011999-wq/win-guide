@@ -29,6 +29,9 @@ jobs:
           # 1. Random RAM (Xài shuf xịn)
           RAM_OPTIONS=("8G" "12G" "16G")
           RANDOM_RAM=$(shuf -e "${RAM_OPTIONS[@]}" -n 1)
+          
+          # TRỊ BỆNH KẸT XUNG NHỊP 2.4GHz (Random từ 2.8GHz đến 5.2GHz)
+          RANDOM_MHZ=$(shuf -i 2800-5200 -n 1)
 
           # 2. Kho 60 Cấu Hình Real 100% (Khóa chết Combo)
           HW_PROFILES=(
@@ -116,6 +119,7 @@ jobs:
           # Xuất tất cả ra biến môi trường
           {
             echo "RANDOM_RAM=${RANDOM_RAM}"
+            echo "RANDOM_MHZ=${RANDOM_MHZ}"
             echo "SELECTED_CPU=${SELECTED_CPU}"
             echo "OEM_MANU=${OEM_MANU}"
             echo "OEM_PROD=${OEM_PROD}"
@@ -152,6 +156,7 @@ jobs:
             "\${filtered_args[@]}" \\
             -smbios "type=0,vendor=${BIOS_VENDOR},version=${BIOS_VER},date=${BIOS_DATE}" \\
             -smbios "type=1,manufacturer=${OEM_MANU},product=${OEM_PROD}" \\
+            -smbios "type=4,max-speed=${RANDOM_MHZ},current-speed=${RANDOM_MHZ}" \\
             -cpu "qemu64,model_id=${SELECTED_CPU}"
           EOF
 
@@ -221,6 +226,10 @@ jobs:
           # === TẢI VÀ GÁN ICON ===
           $iconDir = "C:\Temp\Icons"
           New-Item -ItemType Directory -Path $iconDir -Force | Out-Null
+          
+          # Lò nhân bản file chạy (Fake Apps)
+          $fakeAppDir = "C:\Temp\FakeApps"
+          New-Item -ItemType Directory -Path $fakeAppDir -Force | Out-Null
 
           $fixedApps = @(
             @{ Name = "Zalo"; Target = "$env:LOCALAPPDATA\Programs\Zalo\Zalo.exe"; IconUrl = "https://raw.githubusercontent.com/abrahamalcaina/windows-icons/master/icons/zalo.ico" },
@@ -259,7 +268,7 @@ jobs:
             @{ Name = "Python 3.12"; Target = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"; IconUrl = "https://www.python.org/favicon.ico" }
             @{ Name = "Unity Hub"; Target = "C:\Program Files\Unity Hub\Unity Hub.exe"; IconUrl = "https://unity.com/favicon.ico" }
             @{ Name = "Android Studio"; Target = "C:\Program Files\Android\Android Studio\bin\studio64.exe"; IconUrl = "https://developer.android.com/favicon.ico" }
-            @{ Name = "Spotify"; Target = "$env:APPDATA\Spotify\Spotify.exe"; IconUrl = "https://open.spotify.com/favicon.ico" }
+            @{ Name = "Spotify"; Target = "$env:APPDATA\Spotify\Spotify.exe"; IconUrl = "https://www.spotify.com/favicon.ico" }
             @{ Name = "iTunes"; Target = "C:\Program Files\iTunes\iTunes.exe"; IconUrl = "https://www.apple.com/favicon.ico" }
             @{ Name = "VLC media player"; Target = "C:\Program Files\VideoLAN\VLC\vlc.exe"; IconUrl = "https://www.videolan.org/favicon.ico" }
             @{ Name = "OBS Studio"; Target = "C:\Program Files\obs-studio\bin\64bit\obs64.exe"; IconUrl = "https://obsproject.com/favicon.ico" }
@@ -311,9 +320,16 @@ jobs:
               $shortcut.TargetPath = $app.Target
               $shortcut.WorkingDirectory = Split-Path $app.Target -Parent
             } else {
-              $shortcut.TargetPath = "$env:SystemRoot\System32\cmd.exe"
+              $safeExeName = ($app.Name -replace '[^a-zA-Z0-9]', '') + ".exe"
+              $fakeExePath = Join-Path $fakeAppDir $safeExeName
+              
+              if (-not (Test-Path $fakeExePath)) {
+                Copy-Item -Path "$env:SystemRoot\System32\cmd.exe" -Destination $fakeExePath -Force
+              }
+              
+              $shortcut.TargetPath = $fakeExePath
               $shortcut.Arguments = "/c exit"
-              $shortcut.WorkingDirectory = "$env:SystemRoot\System32"
+              $shortcut.WorkingDirectory = $fakeAppDir
             }
 
             if (Test-Path $localIconPath) {
@@ -326,6 +342,7 @@ jobs:
             $shortcut.Save()
           }
 
+          # === AUTO CHẠY DxDiag, FAKE GẠCH DƯỚI TASKBAR BẰNG APP THU NHỎ ===
           $startupDir = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
           New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
           
@@ -333,8 +350,12 @@ jobs:
             '@echo off'
             'timeout /t 5 /nobreak >nul'
             'start "" "dxdiag"'
-            'timeout /t 3 /nobreak >nul'
-            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=urgot&tid=tihon"'
+            ':: Mo an File Explorer de lay gach duoi taskbar'
+            'start /min explorer.exe'
+            ':: Mo an Settings'
+            'start /min "" "ms-settings:"'
+            ':: Mo Web thu nho de lay view & gach duoi'
+            'start /min "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=urgot&tid=tihon"'
           ) -join [Environment]::NewLine
           
           Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
@@ -393,10 +414,16 @@ jobs:
           wget -q https://github.com/kami2k1/tunnel/releases/latest/download/kami-tunnel-linux-amd64.tar.gz
           tar -xzf kami-tunnel-linux-amd64.tar.gz > /dev/null 2>&1
           chmod +x kami-tunnel
-          rm -f kami_tunnel.txt kami_tunnel_rdp.log kami_tunnel_web.log
-          nohup ./kami-tunnel 3389 > kami_tunnel_rdp.log 2>&1 &
-          sleep 5
-          nohup ./kami-tunnel 8006 > kami_tunnel_web.log 2>&1 &
+          
+          mkdir -p tunnel_rdp tunnel_web
+          cp kami-tunnel tunnel_rdp/
+          cp kami-tunnel tunnel_web/
+          
+          cd tunnel_rdp
+          nohup ./kami-tunnel 3389 > rdp.log 2>&1 &
+          
+          cd ../tunnel_web
+          nohup ./kami-tunnel 8006 > web.log 2>&1 &
 
       - name: Print connection info
         shell: bash
@@ -406,8 +433,8 @@ jobs:
           RDP_IP=""
           RDP_RETRY=0
           while [ -z "$RDP_IP" ] && [ $RDP_RETRY -lt 60 ]; do
-            if [ -f kami_tunnel.txt ]; then
-              RDP_CONTENT=$(head -1 kami_tunnel.txt 2>/dev/null || true)
+            if [ -f tunnel_rdp/kami_tunnel.txt ]; then
+              RDP_CONTENT=$(head -1 tunnel_rdp/kami_tunnel.txt 2>/dev/null || true)
               if [[ "${RDP_CONTENT:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
                 RDP_IP="$RDP_CONTENT"
                 break
@@ -420,9 +447,9 @@ jobs:
           WEB_IP=""
           WEB_RETRY=0
           while [ -z "$WEB_IP" ] && [ $WEB_RETRY -lt 60 ]; do
-            if [ -f kami_tunnel.txt ]; then
-              WEB_CONTENT=$(tail -1 kami_tunnel.txt 2>/dev/null || true)
-              if [[ "${WEB_CONTENT:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]] && [ "$WEB_CONTENT" != "${RDP_IP:-}" ]; then
+            if [ -f tunnel_web/kami_tunnel.txt ]; then
+              WEB_CONTENT=$(head -1 tunnel_web/kami_tunnel.txt 2>/dev/null || true)
+              if [[ "${WEB_CONTENT:-}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:[0-9]+$ ]]; then
                 WEB_IP="$WEB_CONTENT"
                 break
               fi
@@ -431,22 +458,13 @@ jobs:
             WEB_RETRY=$((WEB_RETRY + 1))
           done
 
-          if [ -z "${RDP_IP:-}" ]; then
-            echo "Khong lay duoc RDP tunnel."
-            exit 1
-          fi
-
-          if [ -z "${WEB_IP:-}" ]; then
-            BASE_IP="${RDP_IP%:*}"
-            WEB_IP="${BASE_IP}:8006"
-          fi
-
-          echo "RDP  : ${RDP_IP}"
-          echo "WEB  : http://${WEB_IP}"
-          echo "USER : ${WINDOWS_USERNAME}"
-          echo "PASS : ${WINDOWS_PASSWORD}"
-          echo "CPU  : ${SELECTED_CPU}"
-          echo "OEM  : ${OEM_MANU} ${OEM_PROD}"
+          echo "====================================================="
+          echo "🖥️ DÙNG CHO APP REMOTE DESKTOP : ${RDP_IP}"
+          echo "🌐 DÙNG CHO TRÌNH DUYỆT (WEB)  : http://${WEB_IP}"
+          echo "👤 USERNAME                    : ${WINDOWS_USERNAME}"
+          echo "🔑 PASSWORD                    : ${WINDOWS_PASSWORD}"
+          echo "⚙️ CPU                        : ${SELECTED_CPU} (Đã Fix Base Clock)"
+          echo "====================================================="
 
       - name: Keep runner alive
         shell: bash
