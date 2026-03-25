@@ -1,4 +1,4 @@
-name: "WINDOWS DOCKURR (FAST noVNC + RANDOM HW PROFILE)"
+name: "WINDOWS DOCKURR (PURE AMBASSADOR)"
 
 on:
   workflow_dispatch:
@@ -17,353 +17,36 @@ jobs:
       WINDOWS_PASSWORD: "ngoc0102@"
 
     steps:
-      - name: Prepare workspace and random profiles
+      - name: Prepare workspace and OEM scripts
         shell: bash
         run: |
           set -Eeuo pipefail
           sudo apt-get update > /dev/null 2>&1
           sudo mkdir -p /mnt/windows_data
           sudo chmod 777 /mnt/windows_data
-          mkdir -p oem qemu-wrapper
+          mkdir -p oem
 
-          # 1. Random RAM
-          RAM_OPTIONS=("8G" "12G" "16G")
-          RANDOM_RAM=$(shuf -e "${RAM_OPTIONS[@]}" -n 1)
-
-          # 2. Kho 60 Cấu Hình Real 100% (ĐÃ GẮN ĐUÔI @ GHz VÀO TÊN ĐỂ ÉP TASK MANAGER HIỂN THỊ CHUẨN)
-          HW_PROFILES=(
-            # =========================
-            # BUSINESS / OFFICE
-            # =========================
-            "Intel(R) Core(TM) i5-10500 CPU @ 3.10GHz|HP|HP ProDesk 400 G7|HPQOEM|S01 Ver. 02.13.00|08/01/2023"
-            "Intel(R) Core(TM) i5-12500 @ 3.00GHz|Dell Inc.|OptiPlex 7000 Small Form Factor|Dell Inc.|1.9.1|08/29/2023"
-            "Intel(R) Core(TM) i7-12700 @ 2.10GHz|Dell Inc.|OptiPlex 7000 Tower|Dell Inc.|1.10.2|10/17/2023"
-            "Intel(R) Core(TM) i5-13500 @ 2.50GHz|Dell Inc.|OptiPlex 7010 Tower|Dell Inc.|1.3.0|09/26/2023"
-            "Intel(R) Core(TM) i7-1260P @ 2.10GHz|Dell Inc.|Latitude 7430|Dell Inc.|1.19.0|09/20/2023"
-            "Intel(R) Core(TM) i5-1245U @ 1.60GHz|Dell Inc.|Latitude 5430|Dell Inc.|1.18.0|07/27/2023"
-            "Intel(R) Core(TM) i5-1335U @ 1.30GHz|Dell Inc.|Latitude 5440|Dell Inc.|1.7.0|10/24/2023"
-            "Intel(R) Core(TM) i7-1365U @ 1.80GHz|Dell Inc.|Latitude 7440|Dell Inc.|1.6.0|11/09/2023"
-            "Intel(R) Core(TM) i7-1185G7 @ 3.00GHz|HP|HP EliteBook 840 G8 Notebook PC|HPQOEM|T70 Ver. 01.09.01|06/14/2022"
-            "Intel(R) Core(TM) i5-1240P @ 1.70GHz|HP|HP ProBook 440 14 inch G9 Notebook PC|HPQOEM|U85 Ver. 01.07.00|11/15/2022"
-            "Intel(R) Core(TM) i7-1265U @ 1.80GHz|HP|HP EliteBook 840 G9 Notebook PC|HP|U78 Ver. 01.08.00|09/12/2023"
-            "Intel(R) Core(TM) i5-1235U @ 1.30GHz|HP|HP EliteBook 640 G9 Notebook PC|HP|U79 Ver. 01.10.00|10/04/2023"
-            "Intel(R) Core(TM) i5-12500 @ 3.00GHz|LENOVO|ThinkCentre M70t Gen 3|LENOVO|M46KT38A|09/19/2023"
-            "Intel(R) Core(TM) i7-12700 @ 2.10GHz|LENOVO|ThinkCentre M90t Gen 3|LENOVO|M2AKT53A|08/16/2023"
-            "Intel(R) Core(TM) i7-1260P @ 2.10GHz|LENOVO|ThinkPad T14 Gen 3|LENOVO|N3MET08W (1.05)|08/16/2022"
-            "Intel(R) Core(TM) i5-1235U @ 1.30GHz|LENOVO|ThinkBook 14 G4 IAP|LENOVO|J7CN40WW|09/02/2022"
-            "Intel(R) Core(TM) i7-1255U @ 1.70GHz|LENOVO|ThinkPad E14 Gen 4|LENOVO|R1BET72W|10/10/2023"
-            "Intel(R) Core(TM) i7-1265U @ 1.80GHz|LENOVO|ThinkPad X1 Carbon Gen 10|LENOVO|N3XET82W|11/15/2023"
-            "Intel(R) Core(TM) i7-1260P @ 2.10GHz|ASUSTeK COMPUTER INC.|ExpertBook B5 B5402CBA|American Megatrends International, LLC.|311|10/07/2022"
-            "Intel(R) Core(TM) i5-1235U @ 1.30GHz|ASUSTeK COMPUTER INC.|ExpertBook B1 B1402CBA|American Megatrends International, LLC.|303|08/18/2023"
-            "Intel(R) Core(TM) i7-1360P @ 2.20GHz|ASUSTeK COMPUTER INC.|ExpertBook B9 B9403CVA|American Megatrends International, LLC.|302|07/11/2023"
-            "Intel(R) Core(TM) i7-1185G7 @ 3.00GHz|Acer|TravelMate P4 TMP414-52|Insyde Corp.|V1.07|09/06/2022"
-            "Intel(R) Core(TM) i5-1235U @ 1.30GHz|Acer|TravelMate P2 TMP214-54|Insyde Corp.|V1.15|06/21/2023"
-            "Intel(R) Core(TM) i7-1185G7 @ 3.00GHz|Microsoft Corporation|Surface Laptop 4|Microsoft Corporation|18.102.143|08/25/2022"
-
-            # =========================
-            # GAMING
-            # =========================
-            "AMD Ryzen 7 6800H with Radeon Graphics @ 3.20GHz|ASUSTeK COMPUTER INC.|ROG Strix G15 G513RM|American Megatrends International, LLC.|315|04/16/2022"
-            "AMD Ryzen 9 6900HX with Radeon Graphics @ 3.30GHz|ASUSTeK COMPUTER INC.|ROG Strix Scar 15 G533ZS|American Megatrends International, LLC.|313|07/28/2022"
-            "Intel(R) Core(TM) i5-11400H @ 2.70GHz|ASUSTeK COMPUTER INC.|ASUS TUF Gaming F15 FX506HC|American Megatrends International, LLC.|311|11/05/2022"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|ASUSTeK COMPUTER INC.|TUF Gaming F15 FX507ZM|American Megatrends International, LLC.|315|09/14/2022"
-            "AMD Ryzen 7 7735HS with Radeon Graphics @ 3.20GHz|ASUSTeK COMPUTER INC.|TUF Gaming A15 FA507NV|American Megatrends International, LLC.|307|08/25/2023"
-            "AMD Ryzen 5 5600H with Radeon Graphics @ 3.30GHz|LENOVO|Legion 5 15ACH6|LENOVO|GKCN53WW|05/09/2022"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|LENOVO|Legion 5i Pro 16IAH7H|LENOVO|J2CN40WW|10/20/2022"
-            "AMD Ryzen 7 6800H with Radeon Graphics @ 3.20GHz|LENOVO|Legion 7 16ARHA7|LENOVO|K9CN38WW|08/17/2022"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|Micro-Star International Co., Ltd.|Katana GF66 12UC|American Megatrends International, LLC.|E1584IMS.10A|06/15/2022"
-            "Intel(R) Core(TM) i7-12650H @ 2.30GHz|Micro-Star International Co., Ltd.|Thin GF63 12VE|American Megatrends International, LLC.|E16R8IMS.10B|09/22/2023"
-            "Intel(R) Core(TM) i7-1280P @ 1.80GHz|Micro-Star International Co., Ltd.|Stealth 14 Studio A13VF|American Megatrends International, LLC.|E14K1IMS.108|07/19/2023"
-            "Intel(R) Core(TM) i5-11400H @ 2.70GHz|Acer|Nitro AN515-57|Insyde Corp.|V1.19|03/24/2022"
-            "AMD Ryzen 7 5800H with Radeon Graphics @ 3.20GHz|Acer|Nitro AN515-45|Insyde Corp.|V1.10|05/06/2021"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|Acer|Predator Helios 300 PH315-55|Insyde Corp.|V1.12|07/21/2022"
-            "AMD Ryzen 9 6900HX with Radeon Graphics @ 3.30GHz|Acer|Predator Helios 300 PH315-55s|Insyde Corp.|V1.05|11/14/2022"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|GIGABYTE|AORUS 15 XE4|American Megatrends International, LLC.|FB05|04/10/2022"
-            "Intel(R) Core(TM) i7-13700H @ 2.40GHz|GIGABYTE|G5 KF|American Megatrends International, LLC.|FB09|08/03/2023"
-            "Intel(R) Core(TM) i7-12800H @ 2.40GHz|Razer|Blade 15 Advanced Model (Early 2022)|Razer|2.06|01/02/2024"
-            "Intel(R) Core(TM) i7-13800H @ 2.50GHz|Razer|Blade 16 (2023)|Razer|1.05|06/08/2023"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|HP|OMEN by HP Laptop 16-b1xxx|AMI|F.20|10/21/2022"
-            "AMD Ryzen 7 7840HS with Radeon 780M Graphics @ 3.80GHz|HP|Victus Gaming Laptop 15-fb2xxx|AMI|F.08|09/14/2023"
-
-            # =========================
-            # WORKSTATION / CREATOR
-            # =========================
-            "Intel(R) Core(TM) i7-12700 @ 2.10GHz|Dell Inc.|Precision 3660 Tower|Dell Inc.|1.13.0|10/17/2023"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|Dell Inc.|Precision 5570|Dell Inc.|1.14.0|11/01/2023"
-            "Intel(R) Core(TM) i9-12900K @ 3.20GHz|Dell Inc.|Precision 7865 Tower|Dell Inc.|1.8.0|09/05/2023"
-            "Intel(R) Core(TM) i7-13700 @ 2.10GHz|Dell Inc.|Precision 3460 Small Form Factor|Dell Inc.|1.5.0|12/12/2023"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|HP|HP ZBook Power 15.6 inch G9 Mobile Workstation PC|HP|N78 Ver. 01.08.00|07/12/2023"
-            "Intel(R) Core(TM) i7-12700 @ 2.10GHz|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.08.01|07/12/2023"
-            "Intel(R) Core(TM) i9-13900K @ 3.00GHz|HP|HP Z2 Tower G9 Workstation Desktop PC|HP|02.11.00|11/08/2023"
-            "Intel(R) Core(TM) i7-13800H @ 2.50GHz|HP|HP ZBook Studio 16 inch G10 Mobile Workstation PC|HP|W71 Ver. 01.03.00|09/19/2023"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|LENOVO|ThinkPad P1 Gen 5|LENOVO|N3FET33W (1.15)|11/10/2022"
-            "Intel(R) Core(TM) i7-12800HX @ 2.00GHz|LENOVO|ThinkPad P16 Gen 1|LENOVO|N3EET47W|08/23/2023"
-            "Intel(R) Core(TM) i9-12900HX @ 2.30GHz|LENOVO|ThinkStation P360 Ultra|LENOVO|M70KT35A|07/27/2023"
-            "Intel(R) Core(TM) i7-12700H @ 2.30GHz|ASUSTeK COMPUTER INC.|Zenbook Pro 14 Duo OLED UX8402ZE|American Megatrends International, LLC.|307|09/29/2022"
-            "Intel(R) Core(TM) i9-13980HX @ 2.20GHz|ASUSTeK COMPUTER INC.|ProArt Studiobook 16 OLED H7604JI|American Megatrends International, LLC.|302|08/30/2023"
-            "Intel(R) Core(TM) i9-13900K @ 3.00GHz|ASUSTeK COMPUTER INC.|ROG Maximus Z790 HERO|American Megatrends International, LLC.|0802|12/23/2022"
-            "Intel(R) Core(TM) i7-12700KF @ 3.60GHz|Micro-Star International Co., Ltd.|Creator P100X 12V|American Megatrends International, LLC.|A.30|08/18/2022"
-            "Intel(R) Core(TM) i9-13900HX @ 2.20GHz|Micro-Star International Co., Ltd.|Creator Z17 HX Studio A13V|American Megatrends International, LLC.|E17N3IMS.106|09/05/2023"
-            "Intel(R) Core(TM) i5-13600K @ 3.50GHz|Gigabyte Technology Co., Ltd.|Z790 AORUS ELITE AX|American Megatrends International, LLC.|F3|11/15/2022"
-            "Intel(R) Core(TM) i7-13700K @ 3.40GHz|Gigabyte Technology Co., Ltd.|B760 AORUS ELITE AX|American Megatrends International, LLC.|F6|06/26/2023"
-            "Intel(R) Core(TM) i9-13980HX @ 2.20GHz|Razer|Blade 18 (2023)|Razer|1.04|07/27/2023"
-          )
-          SELECTED_PROFILE=$(shuf -e "${HW_PROFILES[@]}" -n 1)
-          
-          # Tách mảng PROFILE 
-          IFS='|' read -r SELECTED_CPU OEM_MANU OEM_PROD BIOS_VENDOR BIOS_VER BIOS_DATE <<< "$SELECTED_PROFILE"
-
-          # Xuất tất cả ra biến môi trường
-          {
-            echo "RANDOM_RAM=${RANDOM_RAM}"
-            echo "SELECTED_CPU=${SELECTED_CPU}"
-            echo "OEM_MANU=${OEM_MANU}"
-            echo "OEM_PROD=${OEM_PROD}"
-            echo "BIOS_VENDOR=${BIOS_VENDOR}"
-            echo "BIOS_VER=${BIOS_VER}"
-            echo "BIOS_DATE=${BIOS_DATE}"
-          } >> "$GITHUB_ENV"
-
-      - name: Generate custom QEMU launcher
-        shell: bash
-        run: |
-          cat > qemu-wrapper/qemu-system-x86_64 <<EOF
-          #!/usr/bin/env bash
-          set -Eeuo pipefail
-
-          filtered_args=()
-          skip_next=0
-
-          for arg in "\$@"; do
-            if [[ "\$skip_next" -eq 1 ]]; then
-              skip_next=0
-              continue
-            fi
-
-            if [[ "\$arg" == "-smbios" || "\$arg" == "-cpu" ]]; then
-              skip_next=1
-              continue
-            fi
-
-            filtered_args+=("\$arg")
-          done
-
-          exec /usr/bin/qemu-system-x86_64 \\
-            "\${filtered_args[@]}" \\
-            -smbios "type=0,vendor=${BIOS_VENDOR},version=${BIOS_VER},date=${BIOS_DATE}" \\
-            -smbios "type=1,manufacturer=${OEM_MANU},product=${OEM_PROD}" \\
-            -cpu "qemu64,model_id=${SELECTED_CPU}"
-          EOF
-
-          chmod +x qemu-wrapper/qemu-system-x86_64
-
-      - name: Generate setup-ui.ps1
-        shell: bash
-        run: |
-          cat > oem/setup-ui.ps1 <<'POWERSHELL'
+          # === SCRIPT MỞ TRÌNH DUYỆT TỰ ĐỘNG BÚ REF ===
+          cat > oem/setup.ps1 <<'POWERSHELL'
           $ErrorActionPreference = 'SilentlyContinue'
-          $desktop = [Environment]::GetFolderPath("Desktop")
-
-          Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\OEMInformation" -Recurse -Force -ErrorAction SilentlyContinue
-
-          $now = Get-Date
-          $monthsBack = Get-Random -Minimum 6 -Maximum 25
-          $randomPast = $now.AddMonths(-$monthsBack).AddDays(-(Get-Random -Minimum 0 -Maximum 28))
-          $unixTimestamp = [int][Math]::Floor(([DateTimeOffset]$randomPast).ToUnixTimeSeconds())
-          Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion" -Name "InstallDate" -Value $unixTimestamp -Type DWord
-
-          $chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.ToCharArray()
-          $suffix = -join (1..6 | ForEach-Object { $chars | Get-Random })
-          $newName = "DESKTOP-$suffix"
-          Rename-Computer -NewName $newName -Force
-
-          $wallpaperDir = "C:\Temp"
-          $wallpaperPath = Join-Path $wallpaperDir "wallpaper.jpg"
-          New-Item -ItemType Directory -Path $wallpaperDir -Force | Out-Null
-          try {
-            Invoke-WebRequest -Uri "https://picsum.photos/1920/1080" -OutFile $wallpaperPath -UseBasicParsing
-          } catch {}
-
-          if (Test-Path $wallpaperPath) {
-            $code = @(
-              'using System;'
-              'using System.Runtime.InteropServices;'
-              'public class Wallpaper {'
-              '    [DllImport("user32.dll", SetLastError = true)]'
-              '    public static extern bool SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);'
-              '}'
-            ) -join [Environment]::NewLine
-
-            Add-Type -TypeDefinition $code
-
-            Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name WallpaperStyle -Value "10"
-            Set-ItemProperty -Path "HKCU:\Control Panel\Desktop" -Name TileWallpaper -Value "0"
-            [Wallpaper]::SystemParametersInfo(20, 0, $wallpaperPath, 3) | Out-Null
-          }
-
-          $darkMode = Get-Random -Minimum 0 -Maximum 2
-          New-Item -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Force | Out-Null
-          if ($darkMode -eq 1) {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 0 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 0 -Type DWord
-          } else {
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name AppsUseLightTheme -Value 1 -Type DWord
-            Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name SystemUsesLightTheme -Value 1 -Type DWord
-          }
-
-          $folderPool = @("Work", "Projects", "Personal", "Reports", "Archive")
-          $folderCount = Get-Random -Minimum 2 -Maximum 4
-          $selectedFolders = $folderPool | Sort-Object { Get-Random } | Select-Object -First $folderCount
-          foreach ($folder in $selectedFolders) {
-            New-Item -ItemType Directory -Path (Join-Path $desktop $folder) -Force | Out-Null
-          }
-
-          # === TẢI VÀ GÁN ICON ===
-          $iconDir = "C:\Temp\Icons"
-          New-Item -ItemType Directory -Path $iconDir -Force | Out-Null
           
-          # Lò nhân bản file chạy (Fake Apps)
-          $fakeAppDir = "C:\Temp\FakeApps"
-          New-Item -ItemType Directory -Path $fakeAppDir -Force | Out-Null
-
-          $fixedApps = @(
-            @{ Name = "Zalo"; Target = "$env:LOCALAPPDATA\Programs\Zalo\Zalo.exe"; IconUrl = "https://raw.githubusercontent.com/abrahamalcaina/windows-icons/master/icons/zalo.ico" },
-            @{ Name = "Telegram"; Target = "$env:APPDATA\Telegram Desktop\Telegram.exe"; IconUrl = "https://raw.githubusercontent.com/abrahamalcaina/windows-icons/master/icons/telegram.ico" }
-          )
-
-          $appPool = @(
-            @{ Name = "Google Chrome"; Target = "C:\Program Files\Google\Chrome\Application\chrome.exe"; IconUrl = "https://www.google.com/favicon.ico" },
-            @{ Name = "Mozilla Firefox"; Target = "C:\Program Files\Mozilla Firefox\firefox.exe"; IconUrl = "https://www.mozilla.org/favicon.ico" },
-            @{ Name = "Opera GX"; Target = "$env:LOCALAPPDATA\Programs\Opera GX\launcher.exe"; IconUrl = "https://www.opera.com/favicon.ico" },
-            @{ Name = "Brave"; Target = "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe"; IconUrl = "https://brave.com/favicon.ico" },
-            @{ Name = "Microsoft Edge"; Target = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"; IconUrl = "https://www.microsoft.com/favicon.ico" },
-            @{ Name = "Discord"; Target = "$env:LOCALAPPDATA\Discord\Update.exe"; IconUrl = "https://discord.com/favicon.ico" },
-            @{ Name = "Skype"; Target = "C:\Program Files (x86)\Microsoft\Skype for Desktop\Skype.exe"; IconUrl = "https://www.skype.com/favicon.ico" },
-            @{ Name = "WhatsApp"; Target = "$env:LOCALAPPDATA\WhatsApp\WhatsApp.exe"; IconUrl = "https://www.whatsapp.com/favicon.ico" },
-            @{ Name = "Viber"; Target = "$env:LOCALAPPDATA\Viber\Viber.exe"; IconUrl = "https://www.viber.com/favicon.ico" },
-            @{ Name = "Slack"; Target = "$env:LOCALAPPDATA\slack\slack.exe"; IconUrl = "https://slack.com/favicon.ico" },
-            @{ Name = "Microsoft Teams"; Target = "$env:LOCALAPPDATA\Microsoft\Teams\current\Teams.exe"; IconUrl = "https://www.microsoft.com/favicon.ico" },
-            @{ Name = "Zoom"; Target = "$env:APPDATA\Zoom\bin\Zoom.exe"; IconUrl = "https://zoom.us/favicon.ico" },
-            @{ Name = "Steam"; Target = "C:\Program Files (x86)\Steam\steam.exe"; IconUrl = "https://store.steampowered.com/favicon.ico" },
-            @{ Name = "Epic Games Launcher"; Target = "C:\Program Files (x86)\Epic Games\Launcher\Portal\Binaries\Win32\EpicGamesLauncher.exe"; IconUrl = "https://store.epicgames.com/favicon.ico" },
-            @{ Name = "Battle.net"; Target = "C:\Program Files (x86)\Battle.net\Battle.net.exe"; IconUrl = "https://www.blizzard.com/favicon.ico" },
-            @{ Name = "Riot Client"; Target = "C:\Riot Games\Riot Client\RiotClientServices.exe"; IconUrl = "https://www.riotgames.com/favicon.ico" },
-            @{ Name = "Ubisoft Connect"; Target = "C:\Program Files (x86)\Ubisoft\Ubisoft Game Launcher\upc.exe"; IconUrl = "https://www.ubisoft.com/favicon.ico" },
-            @{ Name = "EA app"; Target = "C:\Program Files\Electronic Arts\EA Desktop\EA Desktop\EADesktop.exe"; IconUrl = "https://www.ea.com/favicon.ico" },
-            @{ Name = "Visual Studio Code"; Target = "$env:LOCALAPPDATA\Programs\Microsoft VS Code\Code.exe"; IconUrl = "https://code.visualstudio.com/favicon.ico" },
-            @{ Name = "Visual Studio 2022"; Target = "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe"; IconUrl = "https://visualstudio.microsoft.com/favicon.ico" },
-            @{ Name = "IntelliJ IDEA"; Target = "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition\bin\idea64.exe"; IconUrl = "https://www.jetbrains.com/favicon.ico" },
-            @{ Name = "PyCharm"; Target = "C:\Program Files\JetBrains\PyCharm Community Edition\bin\pycharm64.exe"; IconUrl = "https://www.jetbrains.com/favicon.ico" },
-            @{ Name = "Notepad++"; Target = "C:\Program Files\Notepad++\notepad++.exe"; IconUrl = "https://notepad-plus-plus.org/favicon.ico" },
-            @{ Name = "Sublime Text"; Target = "C:\Program Files\Sublime Text\sublime_text.exe"; IconUrl = "https://www.sublimetext.com/favicon.ico" },
-            @{ Name = "Git Bash"; Target = "C:\Program Files\Git\git-bash.exe"; IconUrl = "https://git-scm.com/favicon.ico" },
-            @{ Name = "GitHub Desktop"; Target = "$env:LOCALAPPDATA\GitHubDesktop\GitHubDesktop.exe"; IconUrl = "https://github.com/favicon.ico" },
-            @{ Name = "Postman"; Target = "$env:LOCALAPPDATA\Postman\Postman.exe"; IconUrl = "https://www.postman.com/favicon.ico" },
-            @{ Name = "Docker Desktop"; Target = "C:\Program Files\Docker\Docker\Docker Desktop.exe"; IconUrl = "https://www.docker.com/favicon.ico" },
-            @{ Name = "Python 3.12"; Target = "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe"; IconUrl = "https://www.python.org/favicon.ico" },
-            @{ Name = "Unity Hub"; Target = "C:\Program Files\Unity Hub\Unity Hub.exe"; IconUrl = "https://unity.com/favicon.ico" },
-            @{ Name = "Android Studio"; Target = "C:\Program Files\Android\Android Studio\bin\studio64.exe"; IconUrl = "https://developer.android.com/favicon.ico" },
-            @{ Name = "Spotify"; Target = "$env:APPDATA\Spotify\Spotify.exe"; IconUrl = "https://www.spotify.com/favicon.ico" },
-            @{ Name = "iTunes"; Target = "C:\Program Files\iTunes\iTunes.exe"; IconUrl = "https://www.apple.com/favicon.ico" },
-            @{ Name = "VLC media player"; Target = "C:\Program Files\VideoLAN\VLC\vlc.exe"; IconUrl = "https://www.videolan.org/favicon.ico" },
-            @{ Name = "OBS Studio"; Target = "C:\Program Files\obs-studio\bin\64bit\obs64.exe"; IconUrl = "https://obsproject.com/favicon.ico" },
-            @{ Name = "CapCut"; Target = "$env:LOCALAPPDATA\CapCut\Apps\CapCut.exe"; IconUrl = "https://www.capcut.com/favicon.ico" },
-            @{ Name = "Adobe Photoshop"; Target = "C:\Program Files\Adobe\Adobe Photoshop 2023\Photoshop.exe"; IconUrl = "https://www.adobe.com/favicon.ico" },
-            @{ Name = "Adobe Illustrator"; Target = "C:\Program Files\Adobe\Adobe Illustrator 2023\Support Files\Contents\Windows\Illustrator.exe"; IconUrl = "https://www.adobe.com/favicon.ico" },
-            @{ Name = "Adobe Premiere Pro"; Target = "C:\Program Files\Adobe\Adobe Premiere Pro 2023\Adobe Premiere Pro.exe"; IconUrl = "https://www.adobe.com/favicon.ico" },
-            @{ Name = "Canva"; Target = "$env:LOCALAPPDATA\Programs\Canva\Canva.exe"; IconUrl = "https://www.canva.com/favicon.ico" },
-            @{ Name = "Figma"; Target = "$env:LOCALAPPDATA\Figma\Figma.exe"; IconUrl = "https://www.figma.com/favicon.ico" },
-            @{ Name = "Word"; Target = "C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE"; IconUrl = "https://www.microsoft.com/favicon.ico" },
-            @{ Name = "Excel"; Target = "C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE"; IconUrl = "https://www.microsoft.com/favicon.ico" },
-            @{ Name = "PowerPoint"; Target = "C:\Program Files\Microsoft Office\root\Office16\POWERPNT.EXE"; IconUrl = "https://www.microsoft.com/favicon.ico" },
-            @{ Name = "Outlook"; Target = "C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE"; IconUrl = "https://outlook.live.com/favicon.ico" },
-            @{ Name = "Notion"; Target = "$env:LOCALAPPDATA\Programs\Notion\Notion.exe"; IconUrl = "https://www.notion.so/favicon.ico" },
-            @{ Name = "Evernote"; Target = "$env:LOCALAPPDATA\Programs\Evernote\Evernote.exe"; IconUrl = "https://evernote.com/favicon.ico" },
-            @{ Name = "Foxit PDF Reader"; Target = "C:\Program Files (x86)\Foxit Software\Foxit PDF Reader\FoxitPDFReader.exe"; IconUrl = "https://www.foxit.com/favicon.ico" },
-            @{ Name = "Adobe Acrobat"; Target = "C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe"; IconUrl = "https://www.adobe.com/favicon.ico" },
-            @{ Name = "OneDrive"; Target = "$env:LOCALAPPDATA\Microsoft\OneDrive\OneDrive.exe"; IconUrl = "https://www.microsoft.com/favicon.ico" },
-            @{ Name = "Google Drive"; Target = "C:\Program Files\Google\Drive File Stream\GoogleDriveFS.exe"; IconUrl = "https://drive.google.com/favicon.ico" },
-            @{ Name = "7-Zip"; Target = "C:\Program Files\7-Zip\7zFM.exe"; IconUrl = "https://www.7-zip.org/favicon.ico" },
-            @{ Name = "WinRAR"; Target = "C:\Program Files\WinRAR\WinRAR.exe"; IconUrl = "https://www.win-rar.com/favicon.ico" },
-            @{ Name = "CCleaner"; Target = "C:\Program Files\CCleaner\CCleaner64.exe"; IconUrl = "https://www.ccleaner.com/favicon.ico" },
-            @{ Name = "TeamViewer"; Target = "C:\Program Files\TeamViewer\TeamViewer.exe"; IconUrl = "https://www.teamviewer.com/favicon.ico" },
-            @{ Name = "AnyDesk"; Target = "C:\Program Files (x86)\AnyDesk\AnyDesk.exe"; IconUrl = "https://anydesk.com/favicon.ico" },
-            @{ Name = "MSI Afterburner"; Target = "C:\Program Files (x86)\MSI Afterburner\MSIAfterburner.exe"; IconUrl = "https://www.msi.com/favicon.ico" },
-            @{ Name = "qBittorrent"; Target = "C:\Program Files\qBittorrent\qbittorrent.exe"; IconUrl = "https://www.qbittorrent.org/favicon.ico" },
-            @{ Name = "Wireshark"; Target = "C:\Program Files\Wireshark\Wireshark.exe"; IconUrl = "https://www.wireshark.org/favicon.ico" },
-            @{ Name = "VirtualBox"; Target = "C:\Program Files\Oracle\VirtualBox\VirtualBox.exe"; IconUrl = "https://www.virtualbox.org/favicon.ico" }
-          )
-
-          $randomApps = $appPool | Sort-Object { Get-Random } | Select-Object -First (Get-Random -Minimum 5 -Maximum 10)
-          $allApps = $fixedApps + $randomApps
-          $wsh = New-Object -ComObject WScript.Shell
-
-          foreach ($app in $allApps) {
-            $shortcutPath = Join-Path $desktop ($app.Name + ".lnk")
-            $shortcut = $wsh.CreateShortcut($shortcutPath)
-            
-            $safeIconName = $app.Name -replace '[^a-zA-Z0-9]', ''
-            $localIconPath = Join-Path $iconDir ($safeIconName + ".ico")
-            
-            try {
-              if (-not (Test-Path $localIconPath)) {
-                Invoke-WebRequest -Uri $app.IconUrl -OutFile $localIconPath -UseBasicParsing -TimeoutSec 3
-              }
-            } catch {}
-
-            if (Test-Path $app.Target) {
-              $shortcut.TargetPath = $app.Target
-              $shortcut.WorkingDirectory = Split-Path $app.Target -Parent
-            } else {
-              $safeExeName = ($app.Name -replace '[^a-zA-Z0-9]', '') + ".exe"
-              $fakeExePath = Join-Path $fakeAppDir $safeExeName
-              
-              if (-not (Test-Path $fakeExePath)) {
-                Copy-Item -Path "$env:SystemRoot\System32\cmd.exe" -Destination $fakeExePath -Force
-              }
-              
-              $shortcut.TargetPath = $fakeExePath
-              $shortcut.Arguments = "/c exit"
-              $shortcut.WorkingDirectory = $fakeAppDir
-            }
-
-            if (Test-Path $localIconPath) {
-               $shortcut.IconLocation = $localIconPath
-            } else {
-               $shortcut.IconLocation = "$env:SystemRoot\System32\shell32.dll,2"
-            }
-            
-            $shortcut.Description = "$($app.Name) Workspace"
-            $shortcut.Save()
-          }
-
-          # === FAKE STATUS RUNNING (GẠCH DƯỚI TASKBAR) BẰNG FORM ẨN ===
           $startupDir = "$env:ProgramData\Microsoft\Windows\Start Menu\Programs\StartUp"
           New-Item -ItemType Directory -Path $startupDir -Force | Out-Null
           
           $startupCmd = @(
             '@echo off'
-            'timeout /t 5 /nobreak >nul'
-            'start "" "dxdiag"'
-            ':: Spawn 2 tien trinh an giu bieu tuong Zalo & Telegram tren Taskbar'
-            'powershell -WindowStyle Hidden -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $f = New-Object System.Windows.Forms.Form; $f.Text = ''Zalo''; $f.WindowState = ''Minimized''; try { $f.Icon = New-Object System.Drawing.Icon(''C:\Temp\Icons\Zalo.ico'') } catch {}; $f.ShowDialog()"'
-            'powershell -WindowStyle Hidden -Command "Add-Type -AssemblyName System.Windows.Forms; Add-Type -AssemblyName System.Drawing; $f = New-Object System.Windows.Forms.Form; $f.Text = ''Telegram''; $f.WindowState = ''Minimized''; try { $f.Icon = New-Object System.Drawing.Icon(''C:\Temp\Icons\Telegram.ico'') } catch {}; $f.ShowDialog()"'
-            'timeout /t 3 /nobreak >nul'
-            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=urgot&tid=tihon"'
+            'timeout /t 10 /nobreak >nul'
+            ':: MO TRINH DUYET LINK AMBASSADOR MOI'
+            'start "" "msedge.exe" "https://tradingradarapp.com/?utm_source=ambas&utm_campaign=nguyentr20&tid=tihon"'
           ) -join [Environment]::NewLine
           
-          Set-Content -Path (Join-Path $startupDir "open-test-page.cmd") -Value $startupCmd -Encoding ASCII
+          Set-Content -Path (Join-Path $startupDir "start-web.cmd") -Value $startupCmd -Encoding ASCII
           POWERSHELL
 
-      - name: Generate install.bat
-        shell: bash
-        run: |
           cat > oem/install.bat <<'BAT'
           @echo off
-          setlocal EnableExtensions EnableDelayedExpansion
-          powershell -NoProfile -ExecutionPolicy Bypass -File "C:\oem\setup-ui.ps1"
+          powershell -NoProfile -ExecutionPolicy Bypass -File "C:\oem\setup.ps1"
           shutdown /r /t 10
-          endlocal
           BAT
 
       - name: Generate docker-compose
@@ -380,10 +63,9 @@ jobs:
                 VERSION: "10"
                 USERNAME: "${WINDOWS_USERNAME}"
                 PASSWORD: "${WINDOWS_PASSWORD}"
-                RAM_SIZE: "${RANDOM_RAM}"
+                RAM_SIZE: "8G"
                 CPU_CORES: "4"
-                DISK_SIZE: "128G"
-                ARGUMENTS: ""
+                DISK_SIZE: "64G"
               devices:
                 - /dev/kvm
               ports:
@@ -392,7 +74,6 @@ jobs:
               volumes:
                 - /mnt/windows_data:/storage
                 - ./oem:/oem
-                - ./qemu-wrapper/qemu-system-x86_64:/usr/local/bin/qemu-system-x86_64
           EOF
 
       - name: Boot Windows
@@ -453,11 +134,11 @@ jobs:
           done
 
           echo "====================================================="
-          echo "🖥️ DÙNG CHO APP REMOTE DESKTOP : ${RDP_IP}"
-          echo "🌐 DÙNG CHO TRÌNH DUYỆT (WEB)  : http://${WEB_IP}"
-          echo "👤 USERNAME                    : ${WINDOWS_USERNAME}"
-          echo "🔑 PASSWORD                    : ${WINDOWS_PASSWORD}"
-          echo "⚙️ CPU                        : ${SELECTED_CPU}"
+          echo "🔥 BẢN ĐẠI SỨ - SẠCH SẼ & TỐC ĐỘ 🔥"
+          echo "🖥️ DÙNG CHO APP RDP  : ${RDP_IP}"
+          echo "🌐 DÙNG CHO WEB      : http://${WEB_IP}"
+          echo "👤 USERNAME         : ${WINDOWS_USERNAME}"
+          echo "🔑 PASSWORD         : ${WINDOWS_PASSWORD}"
           echo "====================================================="
 
       - name: Keep runner alive
